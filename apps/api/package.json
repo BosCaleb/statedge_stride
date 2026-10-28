@@ -1,0 +1,26 @@
+{
+  "name": "@stride/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "start": "func start",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.17.0",
+    "applicationinsights": "^3.17.0",
+    "jose": "^6.2.13",
+    "mssql": "^12.7.13",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@stride/analysis": "workspace:*",
+    "@stride/shared": "workspace:*",
+    "@types/mssql": "^12.3.0",
+    "azurite": "^3.37.0",
+    "esbuild": "^0.28.2"
+  }
+}

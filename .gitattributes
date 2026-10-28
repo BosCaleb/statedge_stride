@@ -1,0 +1,11 @@
+* text=auto eol=lf
+*.skp1 binary
+*.gz binary
+*.mp4 binary
+*.webm binary
+*.task binary
+*.wasm binary
+*.woff2 binary
+*.ttf binary
+*.png binary
+*.jpg binary

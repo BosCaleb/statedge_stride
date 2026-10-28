@@ -1,0 +1,19 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 10 does not run dependency install scripts unless they are listed here.
+onlyBuiltDependencies:
+  - esbuild
+# Their install scripts only print banners or rebuild optional bits we do not use.
+ignoredBuiltDependencies:
+  - core-js
+  - protobufjs
+
+# Dependency versions are pinned by pnpm-lock.yaml; CI installs with --frozen-lockfile.
+engineStrict: true
+
+# The Application Insights SDK depends on @opentelemetry/api ^1.9.1, while the OpenTelemetry
+# packages it brings declare a peer range below 1.10. Keep the whole tree on 1.9.x.
+overrides:
+  '@opentelemetry/api': '~1.9.1'
