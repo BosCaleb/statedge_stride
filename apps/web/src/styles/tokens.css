@@ -1,0 +1,113 @@
+/* Design tokens. Stride sits under StatEdge Sport, which leads with orange. Brand values first,
+   then semantic tokens for the light theme, overridden for the dark theme by the system setting
+   or by the manual toggle (data-theme on <html>).
+
+   Contrast (WCAG): navy text on orange is 6.1:1, so primary buttons use navy text. Orange is
+   never used for text on white (2.8:1). Metric values use the strongest text colour (AAA). */
+
+:root {
+  /* Brand colours */
+  --color-navy: #0d1c3e;
+  --color-orange: #f47820;
+  --color-blue: #1e4f8c;
+  --color-white: #fff;
+
+  /* Type: Oswald for headings and big numbers, Inter for text and tables */
+  --font-display: oswald, 'Arial Narrow', 'Roboto Condensed', sans-serif;
+  --font-body: inter, system-ui, -apple-system, 'Segoe UI', roboto, sans-serif;
+
+  /* Sizes: every button and list row is at least one tap target high */
+  --tap: 48px;
+  --radius: 12px;
+  --radius-small: 8px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --content-width: 720px;
+  --nav-height: 64px;
+
+  /* Text sizes */
+  --text-small: 0.875rem;
+  --text-body: 1rem;
+  --text-large: 1.25rem;
+  --text-metric: 2rem;
+
+  /* Left and right are always labelled as well; colour is never the only signal. */
+  --color-left: var(--color-orange);
+  --color-right: var(--color-blue);
+
+  /* Light theme */
+  --bg: #fff;
+  --surface: #f3f5f9;
+  --surface-raised: #fff;
+  --text: #0d1c3e;
+  --text-muted: #3f4b63;
+  --border: #c9d1df;
+  --heading: var(--color-navy);
+  --link: var(--color-blue);
+  --primary: var(--color-orange);
+  --on-primary: var(--color-navy);
+  --secondary: var(--color-blue);
+  --on-secondary: var(--color-white);
+  --focus: #0b5fff;
+  --warning-bg: #fff4d6;
+  --warning-text: #5c3c00;
+  --danger-bg: #fde8e8;
+  --danger-text: #8a1c1c;
+  --ok-bg: #e5f5ea;
+  --ok-text: #12552b;
+  --shadow: 0 1px 3px rgb(13 28 62 / 15%);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0d1c3e;
+    --surface: #142a57;
+    --surface-raised: #1a3366;
+    --text: #f5f7fb;
+    --text-muted: #c3cbdb;
+    --border: #2e4a80;
+    --heading: var(--color-white);
+    --link: #9cc1f5;
+    --secondary: #9cc1f5;
+    --on-secondary: var(--color-navy);
+    --focus: #8fb8ff;
+    --warning-bg: #4a3500;
+    --warning-text: #ffe3a3;
+    --danger-bg: #5c1a1a;
+    --danger-text: #ffd2d2;
+    --ok-bg: #12452a;
+    --ok-text: #c8f2d6;
+    --shadow: none;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0d1c3e;
+  --surface: #142a57;
+  --surface-raised: #1a3366;
+  --text: #f5f7fb;
+  --text-muted: #c3cbdb;
+  --border: #2e4a80;
+  --heading: var(--color-white);
+  --link: #9cc1f5;
+  --secondary: #9cc1f5;
+  --on-secondary: var(--color-navy);
+  --focus: #8fb8ff;
+  --warning-bg: #4a3500;
+  --warning-text: #ffe3a3;
+  --danger-bg: #5c1a1a;
+  --danger-text: #ffd2d2;
+  --ok-bg: #12452a;
+  --ok-text: #c8f2d6;
+  --shadow: none;
+
+  color-scheme: dark;
+}

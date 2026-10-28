@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BAKED_BUILD_VERSION } from './buildInfo';
 import type { DbSettings } from './db';
 
 // API settings, read once from the environment (Function App settings in Azure,
@@ -11,7 +12,8 @@ const origin = z
 
 const envSchema = z.object({
   ENVIRONMENT: z.enum(['local', 'dev', 'prod']),
-  BUILD_VERSION: z.string().min(1).default('dev'),
+  /** Overrides the version baked in at build time. */
+  BUILD_VERSION: z.string().min(1).optional(),
   SQL_SERVER: z.string().min(1),
   SQL_DATABASE: z.string().min(1),
   SQL_PORT: z.coerce.number().int().min(1).max(65535).default(1433),
@@ -72,7 +74,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   const tenant = e.ENTRA_TENANT_ID;
   return {
     environment: e.ENVIRONMENT,
-    buildVersion: e.BUILD_VERSION,
+    buildVersion: e.BUILD_VERSION ?? BAKED_BUILD_VERSION ?? 'dev',
     db: {
       server: e.SQL_SERVER,
       database: e.SQL_DATABASE,

@@ -1,3 +1,4 @@
+import '../lib/zodSetup';
 import { clipChecks } from '@stride/analysis/gate';
 import { analyse, type AnalysisInput } from '@stride/analysis/pipeline';
 import { encodeSkp1 } from '@stride/analysis/skp1';

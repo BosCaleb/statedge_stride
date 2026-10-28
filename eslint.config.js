@@ -38,6 +38,7 @@ const noStringBuiltSql = [
 export default defineConfig([
   globalIgnores([
     '**/node_modules/**',
+    '**/dist-*/**',
     '**/dist/**',
     '**/coverage/**',
     'apps/api/.deploy/**',
@@ -117,7 +118,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['apps/web/**/*.{ts,tsx}'],
+    files: ['apps/web/src/**/*.{ts,tsx}'],
     plugins: { 'react-hooks': reactHooks },
     rules: {
       'react-hooks/rules-of-hooks': 'error',

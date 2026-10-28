@@ -1,0 +1,27 @@
+name: Deploy prod
+
+# A push to main runs CI, then deploys those artefacts to production. The prod GitHub
+# environment requires a manual approval before the deploy job starts.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: prod

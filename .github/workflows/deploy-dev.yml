@@ -1,0 +1,28 @@
+name: Deploy dev
+
+# A push to dev runs CI, then deploys exactly those artefacts to the dev environment and runs
+# the OWASP ZAP baseline scan against it.
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: dev
+      zap: true

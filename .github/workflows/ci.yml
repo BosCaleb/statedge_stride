@@ -1,22 +1,29 @@
 name: CI
 
+# Lint, typecheck, unit and database tests, licence and audit checks, the builds, and Playwright
+# smoke tests against the built web app with a stubbed API. deploy-dev.yml and deploy-prod.yml
+# call this workflow first, so the artefacts that passed are the ones that are deployed.
+
 on:
   pull_request:
   push:
-    # Pushes to dev and main run this workflow from deploy-dev.yml and deploy-prod.yml, so that
-    # the artefact that passed is the one that is deployed.
     branches-ignore: [dev, main]
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event_name }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Throwaway password for the SQL Server service container of the api-db job.
+  STRIDE_TEST_SQL_SA_PASSWORD: Stride-ci-sql-1
 
 jobs:
   quality:
-    name: Lint, typecheck and unit tests
+    name: Lint, typecheck, unit tests, licences and audit
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -30,3 +37,109 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - name: Licence check
+        run: pnpm licences
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level high
+      - name: Publish the OpenAPI document
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: openapi
+          path: apps/api/openapi.json
+          if-no-files-found: error
+
+  api-db:
+    name: API tests against SQL Server
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      sql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: Stride-ci-sql-1
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P Stride-ci-sql-1 -Q 'SELECT 1' || exit 1"
+          --health-interval 5s --health-timeout 5s --health-retries 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:db
+
+  build:
+    name: Build web and API
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build version
+        run: |
+          echo "BUILD_VERSION=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+          echo "VITE_BUILD_VERSION=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+      - name: Build the web app for dev and prod
+        run: pnpm --filter @stride/web build
+      - name: Build the API and the migrator
+        run: |
+          pnpm --filter @stride/api build
+          cd apps/api/.deploy/app && zip -qr ../../api-app.zip .
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-dev
+          path: apps/web/dist-dev
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-prod
+          path: apps/web/dist-prod
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: api-app
+          path: apps/api/api-app.zip
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: api-migrate
+          path: apps/api/.deploy/migrate
+          if-no-files-found: error
+
+  e2e:
+    name: End-to-end smoke tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium for Playwright
+        run: pnpm --filter @stride/web exec playwright install --with-deps chromium
+      - name: Build the test bundle (fake sign-in, fixture pose estimator)
+        run: pnpm --filter @stride/web build:e2e
+      - run: pnpm --filter @stride/web e2e
+      - name: Keep the report of a failed run
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 14

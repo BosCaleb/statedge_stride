@@ -1,0 +1,131 @@
+name: Deploy
+
+# Reusable: deploys the artefacts built and tested earlier in the same run to one environment.
+# Signs in to Azure with GitHub OIDC (no stored credentials), runs the migrations, deploys the
+# API, deploys the web app, then checks that the new build is the one answering /v1/health.
+#
+# Environment variables (set by the Terraform module, see infra/README.md): AZURE_CLIENT_ID,
+# AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, RESOURCE_GROUP, FUNCTION_APP_NAME, API_URL, WEB_URL,
+# SQL_SERVER, SQL_DATABASE and optionally SQL_STAFF_USERS. Environment secret:
+# AZURE_STATIC_WEB_APPS_API_TOKEN, the one secret the platform requires.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      zap:
+        description: Run an OWASP ZAP baseline scan after deploying
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.WEB_URL }}
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      SQL_SERVER: ${{ vars.SQL_SERVER }}
+      SQL_DATABASE: ${{ vars.SQL_DATABASE }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: apps/web
+      - name: Refuse fake sign-in and unfilled settings
+        env:
+          DEV_FAKE_AUTH_VAR: ${{ vars.DEV_FAKE_AUTH }}
+        run: |
+          file="apps/web/.env.${ENVIRONMENT}"
+          if [ -n "$DEV_FAKE_AUTH_VAR" ]; then echo "::error::DEV_FAKE_AUTH must not be set for ${ENVIRONMENT}"; exit 1; fi
+          if grep -Eq '^(VITE_FAKE_AUTH|VITE_E2E|VITE_ENABLE_DEV_PAGES)=' "$file"; then echo "::error::$file enables a test-only switch"; exit 1; fi
+          if grep -q 'REPLACE_ME' "$file"; then echo "::error::$file still has REPLACE_ME placeholders (see docs/runbook.md)"; exit 1; fi
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-${{ inputs.environment }}
+          path: web
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: api-app
+          path: api
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: api-migrate
+          path: migrate
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Check the Function App settings
+        env:
+          RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+          FUNCTION_APP_NAME: ${{ vars.FUNCTION_APP_NAME }}
+        run: |
+          settings=$(az functionapp config appsettings list -g "$RESOURCE_GROUP" -n "$FUNCTION_APP_NAME" -o json)
+          if echo "$settings" | jq -e '.[] | select(.name == "DEV_FAKE_AUTH")' > /dev/null; then
+            echo "::error::DEV_FAKE_AUTH is set on $FUNCTION_APP_NAME"; exit 1
+          fi
+          actual=$(echo "$settings" | jq -r '.[] | select(.name == "ENVIRONMENT") | .value')
+          if [ "$actual" != "$ENVIRONMENT" ]; then echo "::error::ENVIRONMENT is '$actual', expected '$ENVIRONMENT'"; exit 1; fi
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Run database migrations
+        env:
+          FUNCTION_APP_NAME: ${{ vars.FUNCTION_APP_NAME }}
+          SQL_STAFF_USERS: ${{ vars.SQL_STAFF_USERS }}
+        run: |
+          args=(--grant "$FUNCTION_APP_NAME")
+          IFS=',' read -ra staff <<< "$SQL_STAFF_USERS"
+          for person in "${staff[@]}"; do [ -n "$person" ] && args+=(--grant "$person"); done
+          node migrate/migrate.mjs "${args[@]}"
+      - name: Deploy the API
+        uses: Azure/functions-action@c5060b3b8bb1ebbcb531abd00c822ecbaa8ea656 # v1.5.7
+        with:
+          app-name: ${{ vars.FUNCTION_APP_NAME }}
+          package: api/api-app.zip
+      - name: Deploy the web app
+        uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: upload
+          app_location: web
+          skip_app_build: true
+          skip_api_build: true
+      - name: Check that the new build answers
+        env:
+          API_URL: ${{ vars.API_URL }}
+          WEB_URL: ${{ vars.WEB_URL }}
+        run: |
+          expected="${GITHUB_SHA::12}"
+          for attempt in $(seq 1 30); do
+            version=$(curl -fsS --max-time 20 "$API_URL/v1/health" | jq -r '.version' || true)
+            if [ "$version" = "$expected" ]; then echo "API $version is live"; break; fi
+            echo "attempt $attempt: API answered '${version:-nothing}', waiting for $expected"; sleep 10
+          done
+          [ "$version" = "$expected" ] || { echo "::error::the API did not report build $expected"; exit 1; }
+          curl -fsS -o /dev/null -D headers.txt "$WEB_URL/"
+          grep -qi '^content-security-policy:' headers.txt || { echo "::error::the web app has no content security policy"; exit 1; }
+
+  zap:
+    name: OWASP ZAP baseline scan
+    if: inputs.zap
+    needs: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+        with:
+          target: ${{ vars.WEB_URL }}
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: zap-baseline

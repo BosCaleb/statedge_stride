@@ -27,6 +27,7 @@ const common: BuildOptions = {
   // Provided by the Functions worker at run time.
   external: ['@azure/functions-core'],
   logLevel: 'info',
+  define: { __STRIDE_BUILD_VERSION__: JSON.stringify(process.env.BUILD_VERSION ?? 'dev') },
 };
 
 if (watch) {

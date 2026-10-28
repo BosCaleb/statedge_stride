@@ -1,6 +1,7 @@
 pnpm-lock.yaml
 node_modules/
 dist/
+dist-*/
 coverage/
 apps/api/.deploy/
 apps/api/openapi.json
