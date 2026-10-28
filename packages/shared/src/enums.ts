@@ -44,6 +44,7 @@ export type GateStatus = z.infer<typeof gateStatusSchema>;
 /** Statuses a stored analysis may have. A failed gate can never be saved. */
 export const SAVED_GATE_STATUSES = ['pass', 'conditional'] as const;
 export const savedGateStatusSchema = z.enum(SAVED_GATE_STATUSES);
+export type SavedGateStatus = z.infer<typeof savedGateStatusSchema>;
 
 export const CHECK_LEVELS = ['pass', 'warn', 'fail'] as const;
 export const checkLevelSchema = z.enum(CHECK_LEVELS);

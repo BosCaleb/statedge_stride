@@ -114,5 +114,6 @@ export const analysisConfigSchema = z.object({
     signatureHeight: z.number().int(),
   }),
   gate: gateConfigSchema,
+  comparison: z.object({ sameScaleShare: z.number(), sameFrameRateShare: z.number() }),
 });
 export type AnalysisConfig = z.infer<typeof analysisConfigSchema>;

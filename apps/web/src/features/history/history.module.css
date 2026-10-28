@@ -1,0 +1,111 @@
+/* The athlete's history, comparison picks and trends. */
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.link {
+  display: grid;
+  flex: 1;
+  gap: var(--space-1);
+  min-height: var(--tap);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.link:hover {
+  border-color: var(--secondary);
+}
+
+.date {
+  font-weight: 600;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+}
+
+.pick {
+  display: grid;
+  min-width: var(--tap);
+  place-items: center;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--text-small);
+}
+
+.pick input {
+  width: 22px;
+  height: 22px;
+}
+
+.trend {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chart {
+  width: 100%;
+  min-height: 240px;
+}
+
+.tooltip {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: var(--text-small);
+}
+
+.tooltip p {
+  margin: 0;
+}
+
+.tooltipValue {
+  font-weight: 600;
+}
+
+.values summary {
+  min-height: var(--tap);
+  cursor: pointer;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}

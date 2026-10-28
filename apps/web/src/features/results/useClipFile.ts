@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { readCopy } from '../../lib/local/clipLibrary';
 import { fingerprint } from '../../lib/local/fingerprint';
-import type { LocalClip } from '../../lib/local/records';
+import type { CopyLocation } from '../../lib/local/records';
 
 export type ClipFileState =
   | { kind: 'loading' }
@@ -13,7 +13,9 @@ export type ClipFileState =
  * The video of a clip: the copy kept on the phone, or the original picked again by the coach
  * and recognised by its fingerprint. `pick` returns false for a different file.
  */
-export function useClipFile(clip: LocalClip | undefined): {
+export function useClipFile(
+  clip: { id: string; copy: CopyLocation; fingerprint: string | null } | null | undefined,
+): {
   state: ClipFileState;
   pick: (file: File) => Promise<boolean>;
 } {

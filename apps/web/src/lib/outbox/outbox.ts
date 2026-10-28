@@ -231,6 +231,23 @@ export class Outbox {
   }
 }
 
+/** True when the entry, or an entry it waits for (however indirectly), failed for good. */
+export function needsAttention(entry: OutboxEntry, entries: readonly OutboxEntry[]): boolean {
+  const byId = new Map(entries.map((e) => [e.id, e]));
+  const seen = new Set<string>();
+  const stack = [entry];
+  for (let e = stack.pop(); e; e = stack.pop()) {
+    if (seen.has(e.id)) continue;
+    seen.add(e.id);
+    if (e.state === 'failed') return true;
+    for (const id of e.dependsOn) {
+      const dependency = byId.get(id);
+      if (dependency) stack.push(dependency);
+    }
+  }
+  return false;
+}
+
 /** An in-memory store, for tests and for browsers without IndexedDB. */
 export function memoryStorage(): OutboxStorage {
   const map = new Map<string, OutboxEntry>();

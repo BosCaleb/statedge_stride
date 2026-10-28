@@ -4,7 +4,7 @@ import type { AnalysisConfig } from '@stride/shared/analysisConfig';
  * Bump whenever any algorithm or any value in `defaultConfig` changes. A test fingerprints the
  * configuration and fails until the version is bumped and the new fingerprint is recorded.
  */
-export const ALGORITHM_VERSION = '0.1.0';
+export const ALGORITHM_VERSION = '0.1.1';
 
 /**
  * Every threshold, cut-off, distance and weight used by the analysis, in one place.
@@ -203,6 +203,16 @@ export const defaultConfig: AnalysisConfig = deepFreeze({
     agreementWarnBelow: 0.6,
     /** Plausible cadence. Outside this range the frame rate is probably wrong. STARTING VALUE. */
     cadenceSpm: { min: 100, max: 330 },
+  },
+
+  comparison: {
+    /**
+     * Before and after: scales within this share of each other count as the same calibration,
+     * and capture rates within this share as the same rate; otherwise the comparison shows a
+     * caveat. They change no measurement. NOT IN SPEC (it asks for the warning, not a threshold).
+     */
+    sameScaleShare: 0.02,
+    sameFrameRateShare: 0.1,
   },
 });
 
