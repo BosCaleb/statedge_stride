@@ -1,12 +1,13 @@
 import { CLIPS, CONES, clickFramePixel, drawAthleteBox } from './capture';
 import { expect, PEOPLE, signIn, test } from './fixtures';
 
-// The M3 gate: with the network off, import, calibrate, analyse and review, then the queued
-// session reaches the API when the network returns. The service worker serves the app shell
-// and the code, as on a phone after "Prepare for offline" (the recorded keypoints stand in for
-// the pose model in test builds).
+// The M3 and M4 gates: with the network off, import, calibrate, analyse, review and save; when
+// the network returns, every queued write reaches the API once and in order. The service worker
+// serves the app shell and the code, as on a phone after "Prepare for offline" (the recorded
+// keypoints stand in for the pose model in test builds).
 
 test.use({ serviceWorkers: 'allow' });
+test.describe.configure({ timeout: 60_000 });
 
 test('the whole analysis loop works offline', async ({ page, context, api }) => {
   api.seedAthlete('a', { firstName: 'Lerato', lastName: 'Molefe', birthYear: 2000 });
@@ -51,11 +52,31 @@ test('the whole analysis loop works offline', async ({ page, context, api }) => 
   await page.getByRole('button', { name: 'Analyse this run' }).click();
   await expect(page).toHaveURL(/\/analyses\//, { timeout: 60_000 });
   await expect(page.getByRole('article', { name: 'Cadence' })).toBeVisible();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(
+    page.getByText('Waiting to be saved. It is sent when the phone is online.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: /Offline, 5 waiting/ })).toBeVisible();
   expect(api.sessions.size).toBe(0);
 
   // Back online, the outbox flushes on its own (the browser's online event).
+  const before = api.calls.length;
   api.offline = false;
   await context.setOffline(false);
-  await expect.poll(() => api.sessions.size).toBe(1);
+  await expect(page.getByText('Saved for your organisation.')).toBeVisible();
   await expect(page.getByRole('button', { name: /Sync status: Saved/ })).toBeVisible();
+  const writes = api.calls
+    .slice(before)
+    .filter((c) => c.startsWith('PUT '))
+    .map((c) => c.replace(/[0-9a-f-]{36}/g, ':id'));
+  expect(writes).toEqual([
+    'PUT /v1/sessions/:id',
+    'PUT /v1/calibrations/:id',
+    'PUT /v1/clips/:id',
+    'PUT /v1/analyses/:id',
+    'PUT /v1/analyses/:id/keypoints',
+  ]);
+  expect([api.sessions.size, api.calibrations.size, api.clips.size, api.analyses.size]).toEqual([
+    1, 1, 1, 1,
+  ]);
 });

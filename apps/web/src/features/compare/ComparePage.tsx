@@ -60,6 +60,12 @@ function Comparison({ pair }: { pair: [AnalysisSource, AnalysisSource] }) {
   const players = [useRef<FrameCanvasHandle>(null), useRef<FrameCanvasHandle>(null)] as const;
   const [speed, setSpeed] = useState<number>(SPEEDS[0]);
   const [playing, setPlaying] = useState(false);
+  // Playing while either clip plays: the shorter pass ends first.
+  const running = useRef([false, false]);
+  const onPlaying = (i: number) => (on: boolean) => {
+    running.current[i] = on;
+    if (!running.current.some(Boolean)) setPlaying(false);
+  };
   const caveats = comparisonCaveats(before.result, after.result);
   const rows = metricChanges(before.result, after.result);
   const starts = [firstContact(before.result), firstContact(after.result)].map((f) =>
@@ -114,12 +120,14 @@ function Comparison({ pair }: { pair: [AnalysisSource, AnalysisSource] }) {
           label={`${strings.compare.earlier}, ${formatDisplayDate(beforeDate)}`}
           start={starts[0] ?? 0}
           handle={players[0]}
+          onPlayingChange={onPlaying(0)}
         />
         <ComparePlayer
           source={after}
           label={`${strings.compare.later}, ${formatDisplayDate(afterDate)}`}
           start={starts[1] ?? 0}
           handle={players[1]}
+          onPlayingChange={onPlaying(1)}
         />
       </div>
       <p className={form.hint}>{strings.compare.syncNote}</p>
@@ -232,11 +240,13 @@ function ComparePlayer({
   label,
   start,
   handle,
+  onPlayingChange,
 }: {
   source: AnalysisSource;
   label: string;
   start: number;
   handle: RefObject<FrameCanvasHandle>;
+  onPlayingChange: (playing: boolean) => void;
 }) {
   const { state, pick } = useClipFile(source.clip);
   const keypoints: DecodedKeypoints | null = useKeypoints(source.keypoints);
@@ -252,6 +262,7 @@ function ComparePlayer({
           onFrame={() => undefined}
           controls={false}
           label={label}
+          onPlayingChange={onPlayingChange}
         />
       ) : state.kind === 'missing' && source.clip?.fingerprint ? (
         <div className={styles.missing}>

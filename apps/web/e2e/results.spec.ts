@@ -7,6 +7,9 @@ import type { StubApi } from './stubApi';
 // a refused write says why and can be retried; then the athlete's history, a trend and the
 // before-and-after view of two analyses.
 
+// Each test analyses a run on the phone first, which takes about 20 seconds.
+test.describe.configure({ timeout: 60_000 });
+
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g;
 
 /** The writes the API received since `from`, with the ids blanked out. */
@@ -126,6 +129,8 @@ test.describe('history and comparison', () => {
     page,
     api,
   }) => {
+    // An analysis on the phone, then both clips played through once.
+    test.setTimeout(90_000);
     const athleteId = await importAndCalibrate(page, api);
     const id = await analyse(page);
     await save(page);
@@ -161,14 +166,31 @@ test.describe('history and comparison', () => {
     await expect(cadence).toContainText(/(High|Medium|Low) confidence/);
 
     // The later run plays from this phone; the earlier one needs its original file.
-    await expect(page.getByRole('group', { name: /^Later, / })).toBeVisible();
-    await expect(page.getByText('The clip is not on this phone.')).toBeVisible();
-    await page.getByLabel('Pick the original clip to play it').setInputFiles(CLIPS.run);
-    await expect(page.getByRole('group', { name: /^Earlier, / })).toBeVisible();
+    const earlier = page.getByRole('figure', { name: /^Earlier, / });
+    const later = page.getByRole('figure', { name: /^Later, / });
+    await expect(later.getByRole('group', { name: /^Later, / })).toBeVisible();
+    await expect(earlier.getByText('The clip is not on this phone.')).toBeVisible();
+    await earlier.getByLabel('Pick the original clip to play it').setInputFiles(CLIPS.run);
+    await expect(earlier.getByRole('group', { name: /^Earlier, / })).toBeVisible();
+
+    // Both start on their first initial contact (the same frame here), and step together.
+    const events = api.analyses.get(id)?.result.events ?? [];
+    const contact = Math.min(...events.map((e) => e.icFrame));
+    const at = (frame: number) => new RegExp(`^Frame ${frame + 1} of \\d+`);
+    for (const player of [earlier, later])
+      await expect(player.getByText(at(contact))).toBeVisible();
+    await page.getByRole('button', { name: 'Both forward one frame' }).click();
+    for (const player of [earlier, later])
+      await expect(player.getByText(at(contact + 1))).toBeVisible();
+
+    await page.getByRole('button', { name: '1×', exact: true }).click();
     await page.getByRole('button', { name: 'Play both' }).click();
     await expect(page.getByRole('button', { name: 'Pause both' })).toBeVisible();
-    await page.getByRole('button', { name: 'Pause both' }).click();
+    // Once both passes have played to the end.
+    await expect(page.getByRole('button', { name: 'Play both' })).toBeVisible({ timeout: 30_000 });
     await page.getByRole('button', { name: 'Back to the first contact' }).click();
+    for (const player of [earlier, later])
+      await expect(player.getByText(at(contact))).toBeVisible();
     await expectAccessible(page);
   });
 });
