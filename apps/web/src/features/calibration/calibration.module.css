@@ -1,0 +1,64 @@
+/* Calibration: the frame with the markers, and the controls under it. */
+
+.step {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.prompt {
+  margin: 0;
+  font-size: var(--text-large);
+  font-weight: 600;
+}
+
+.overlay {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.frameBox {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.canvas {
+  display: block;
+  max-width: 100%;
+  border-radius: var(--radius-small);
+  background: var(--color-navy);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.positions {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.segment,
+.nudge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.result {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.scale {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-large);
+}

@@ -17,7 +17,7 @@ import { probeClip } from './probe';
 // the screen awake, pause while the page is hidden, and settle with the result or a failure.
 
 export interface JobInput {
-  file: File;
+  file: Blob;
   calibration: CalibrationInput | null;
   roi: Roi;
   roiFrame: number;

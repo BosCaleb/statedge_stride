@@ -6,10 +6,11 @@ import shell from '../../app/shell.module.css';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { ConsentBadge } from '../../components/ConsentBadge';
 import form from '../../components/form.module.css';
-import { EmptyState, ErrorState, LoadingState } from '../../components/States';
+import { ErrorState, LoadingState } from '../../components/States';
 import ui from '../../components/ui.module.css';
 import { useApi, useMe } from '../../lib/apiContext';
 import { strings } from '../../lib/strings';
+import { HistorySection } from '../history/HistorySection';
 import { athleteKeys, useAthlete, useConsentHistory, useWithdrawConsent } from './athleteData';
 import styles from './athletes.module.css';
 import { useQueryClient } from '@tanstack/react-query';
@@ -97,7 +98,7 @@ export function AthletePage() {
 
       <section className={styles.section} aria-labelledby="history-heading">
         <h2 id="history-heading">{strings.athlete.historyHeading}</h2>
-        <EmptyState title={strings.athlete.historyEmpty} />
+        <HistorySection athleteId={a.id} />
       </section>
 
       {isAdmin ? <AdminTools athleteId={a.id} fullName={`${a.firstName} ${a.lastName}`} /> : null}

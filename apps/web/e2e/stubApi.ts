@@ -1,9 +1,32 @@
 import { randomUUID } from 'node:crypto';
+import { gunzipSync } from 'node:zlib';
 import type { Page, Route } from '@playwright/test';
+import { readSkp1Header } from '@stride/analysis/skp1';
+import type { AnalysisResult } from '@stride/shared/analysisResult';
+import type {
+  AnalysisPut,
+  AnalysisSummary,
+  HistoryEntry,
+  Note,
+  NotePut,
+} from '@stride/shared/api/analyses';
 import type { Athlete, Consent } from '@stride/shared/api/athletes';
+import type { DeviceCheckPost } from '@stride/shared/api/devices';
 import type { AuditEntry, Member } from '@stride/shared/api/org';
-import { routeEntries, type ROUTES, type RouteDef, type RouteName } from '@stride/shared/api/routes';
-import { consentRuleProblem } from '@stride/shared/consent';
+import type {
+  Calibration,
+  CalibrationPut,
+  Clip,
+  ClipPut,
+  Session,
+} from '@stride/shared/api/sessions';
+import {
+  routeEntries,
+  type ROUTES,
+  type RouteDef,
+  type RouteName,
+} from '@stride/shared/api/routes';
+import { consentRuleProblem, isMinor } from '@stride/shared/consent';
 import { DEV_IDENTITIES, DEV_ORGS } from '@stride/shared/devIdentities';
 import type { AuditAction } from '@stride/shared/enums';
 import type { z } from 'zod';
@@ -20,6 +43,8 @@ type OrgKey = keyof typeof DEV_ORGS;
 interface Reply {
   status?: number;
   body?: unknown;
+  /** A binary answer, sent as application/octet-stream. */
+  bytes?: Buffer;
 }
 class Problem extends Error {
   constructor(
@@ -41,6 +66,13 @@ interface Invite {
   acceptedBy: string | null;
 }
 
+interface StoredAnalysis {
+  org: OrgKey;
+  summary: AnalysisSummary;
+  result: AnalysisResult;
+  keypoints: Buffer | null;
+}
+
 interface Call {
   person: Person | null;
   org: OrgKey | null;
@@ -57,6 +89,14 @@ export class StubApi {
   readonly invites: Invite[] = [];
   readonly coaches: (Member & { org: OrgKey; oid: string })[] = [];
   readonly audit: (AuditEntry & { org: OrgKey })[] = [];
+  readonly sessions = new Map<string, Session & { org: OrgKey }>();
+  readonly deviceChecks = new Map<string, DeviceCheckPost & { org: OrgKey; createdAt: string }>();
+  readonly calibrations = new Map<string, Calibration & { org: OrgKey }>();
+  readonly clips = new Map<string, Clip & { org: OrgKey }>();
+  readonly analyses = new Map<string, StoredAnalysis>();
+  readonly notes = new Map<string, Note & { org: OrgKey }>();
+  /** The body of each immutable write, to tell a repeat from a conflicting write. */
+  private writes = new Map<string, { org: OrgKey | null; json: string }>();
   private failures: { route: RouteName; status: number; code: string }[] = [];
   /** Route interception runs before the network, so going offline must be simulated here too. */
   offline = false;
@@ -81,6 +121,72 @@ export class StubApi {
 
   async attach(page: Page): Promise<void> {
     await page.route(`${API_ORIGIN}/api/**`, (route) => this.handle(route));
+  }
+
+  /** Adds an athlete to an organisation, with an adult's verbal consent for analysis. */
+  seedAthlete(
+    org: OrgKey,
+    athlete: { firstName: string; lastName: string; birthYear: number },
+    consent = true,
+  ): string {
+    const id = randomUUID();
+    this.athletes.set(id, {
+      id,
+      org,
+      ...athlete,
+      externalRef: null,
+      createdAt: new Date().toISOString(),
+      consents: { analysis: null, sharing: null, clip_storage: null },
+    });
+    if (consent) {
+      const consentId = randomUUID();
+      this.consents.set(consentId, {
+        id: consentId,
+        org,
+        athleteId: id,
+        purpose: 'analysis',
+        givenBy: 'athlete',
+        givenByName: `${athlete.firstName} ${athlete.lastName}`,
+        relationship: null,
+        evidence: 'verbal',
+        givenOn: '2026-03-01',
+        recordedBy: this.coaches.find((c) => c.org === org)?.id ?? '',
+        recordedAt: new Date().toISOString(),
+        withdrawnAt: null,
+      });
+    }
+    return id;
+  }
+
+  /**
+   * Copies a saved analysis into a new session some days earlier, as if the athlete had been
+   * filmed then too, with the result changed by `change`. Returns the copy's id.
+   */
+  copyAnalysis(
+    id: string,
+    daysEarlier: number,
+    change: (result: AnalysisResult) => AnalysisResult,
+  ): string {
+    const a = this.analyses.get(id);
+    const clip = a && this.clips.get(a.summary.clipId);
+    const session = a && this.sessions.get(a.summary.sessionId);
+    if (!a || !clip || !session) throw new Error(`analysis ${id} is not saved`);
+    const at = new Date(Date.parse(a.summary.createdAt) - daysEarlier * 86_400_000).toISOString();
+    const [sessionId, clipId, copyId] = [randomUUID(), randomUUID(), randomUUID()];
+    this.sessions.set(sessionId, {
+      ...session,
+      id: sessionId,
+      sessionDate: at.slice(0, 10),
+      createdAt: at,
+    });
+    this.clips.set(clipId, { ...clip, id: clipId, sessionId, calibrationId: null, createdAt: at });
+    this.analyses.set(copyId, {
+      org: a.org,
+      summary: { ...a.summary, id: copyId, clipId, sessionId, createdAt: at, supersededBy: null },
+      result: change(structuredClone(a.result)),
+      keypoints: a.keypoints,
+    });
+    return copyId;
   }
 
   /** The next request to this route answers with a problem instead. */
@@ -128,7 +234,11 @@ export class StubApi {
       if (coach?.status === 'removed') throw new Problem(403, 'forbidden');
       if (def.auth === 'admin' && coach?.role !== 'admin') throw new Problem(403, 'forbidden');
       let parsedBody: unknown;
-      if (def.body && !('kind' in def.body)) {
+      if (def.body && 'kind' in def.body) {
+        const bytes = request.postDataBuffer() ?? Buffer.alloc(0);
+        if (bytes.byteLength > def.body.maxBytes) throw new Problem(413, 'payload_too_large');
+        parsedBody = bytes;
+      } else if (def.body) {
         const parsed = def.body.safeParse(request.postDataJSON());
         if (!parsed.success) throw new Problem(400, 'validation');
         parsedBody = parsed.data;
@@ -141,11 +251,19 @@ export class StubApi {
         body: parsedBody,
       });
       status = reply.status ?? (def.response === null ? 204 : 200);
-      body = reply.body;
+      body = reply.bytes ?? reply.body;
     } catch (error) {
       if (!(error instanceof Problem)) throw error;
       status = error.status;
       body = { type: 'urn:test', title: error.code, status: error.status, code: error.code };
+    }
+    if (Buffer.isBuffer(body)) {
+      await route.fulfill({
+        status,
+        headers: { ...cors, 'Content-Type': 'application/octet-stream' },
+        body,
+      });
+      return;
     }
     await route.fulfill({
       status,
@@ -250,6 +368,65 @@ export class StubApi {
     );
   }
 
+  /** True when the id was already written with this body. A different body is a conflict. */
+  private repeated(kind: string, id: string, org: OrgKey | null, body: unknown): boolean {
+    const seen = this.writes.get(`${kind}:${id}`);
+    if (!seen) return false;
+    if (seen.org !== org || seen.json !== JSON.stringify(body)) throw new Problem(409, 'conflict');
+    return true;
+  }
+
+  private written(kind: string, id: string, org: OrgKey | null, body: unknown): void {
+    this.writes.set(`${kind}:${id}`, { org, json: JSON.stringify(body) });
+  }
+
+  private inSession(org: OrgKey | null, sessionId: string): void {
+    const session = this.sessions.get(sessionId);
+    if (!session || session.org !== org) throw new Problem(404, 'not_found');
+  }
+
+  private analysisIn(org: OrgKey | null, id: string): StoredAnalysis {
+    const a = this.analyses.get(id);
+    if (!a || a.org !== org) throw new Problem(404, 'not_found');
+    return a;
+  }
+
+  private notesOf(analysisId: string): Note[] {
+    return [...this.notes.values()]
+      .filter((n) => n.analysisId === analysisId)
+      .sort((x, y) => x.createdAt.localeCompare(y.createdAt))
+      .map(({ org: _o, ...n }) => n);
+  }
+
+  private historyEntry(a: StoredAnalysis): HistoryEntry {
+    const session = this.sessions.get(a.summary.sessionId);
+    return {
+      ...a.summary,
+      sessionDate: session?.sessionDate ?? a.summary.createdAt.slice(0, 10),
+      // As stride.analysis_metrics: only the measured metrics.
+      metrics: a.result.metrics
+        .filter((m) => m.value !== null && m.confidence !== 'unavailable')
+        .map((m) => ({
+          metricId: m.id,
+          value: m.value,
+          left: m.bySide?.left ?? null,
+          right: m.bySide?.right ?? null,
+          sd: m.sd ?? null,
+          n: m.n,
+          unit: m.unit,
+          confidence: m.confidence,
+        })),
+    };
+  }
+
+  private dropAnalysis(id: string): void {
+    for (const [noteId, n] of this.notes) if (n.analysisId === id) this.notes.delete(noteId);
+    for (const other of this.analyses.values())
+      if (other.summary.supersededBy === id) other.summary.supersededBy = null;
+    this.analyses.delete(id);
+    this.writes.delete(`analysis:${id}`);
+  }
+
   private reply(name: RouteName, c: Call): Reply {
     const org = c.org;
     const coachId = c.person?.coach?.id ?? null;
@@ -299,6 +476,9 @@ export class StubApi {
         this.athletes.delete(a.id);
         for (const [id, consent] of this.consents)
           if (consent.athleteId === a.id) this.consents.delete(id);
+        for (const [id, analysis] of this.analyses)
+          if (analysis.summary.athleteId === a.id) this.dropAnalysis(id);
+        for (const [id, clip] of this.clips) if (clip.athleteId === a.id) this.clips.delete(id);
         this.record(a.org, coachId, 'athlete.delete', a.id);
         return {};
       }
@@ -448,6 +628,253 @@ export class StubApi {
         invite.acceptedBy = c.person.oid;
         return { body: this.me(c.person, invite.org) };
       }
+      case 'listSessions': {
+        const items = [...this.sessions.values()]
+          .filter((x) => x.org === org)
+          .sort(
+            (x, y) =>
+              y.sessionDate.localeCompare(x.sessionDate) || y.createdAt.localeCompare(x.createdAt),
+          )
+          .map(({ org: _o, ...x }) => x);
+        return { body: { items, nextCursor: null } };
+      }
+      case 'putSession': {
+        const body = c.body as z.output<typeof ROUTES.putSession.body>;
+        const id = c.params.id ?? '';
+        const existing = this.sessions.get(id);
+        if (existing && existing.org !== org) throw new Problem(409, 'conflict');
+        const session = {
+          id,
+          org: org ?? 'a',
+          sessionDate: body.sessionDate,
+          place: body.place ?? null,
+          surface: body.surface ?? null,
+          footwear: body.footwear ?? null,
+          mode: body.mode,
+          notes: body.notes ?? null,
+          createdBy: existing?.createdBy ?? coachId ?? '',
+          createdAt: existing?.createdAt ?? new Date().toISOString(),
+        };
+        this.sessions.set(id, session);
+        const { org: _o, ...out } = session;
+        return { status: existing ? 200 : 201, body: out };
+      }
+      case 'getSession': {
+        const session = this.sessions.get(c.params.id ?? '');
+        if (!session || session.org !== org) throw new Problem(404, 'not_found');
+        const { org: _o, ...out } = session;
+        const inThis = <T extends { sessionId: string; org: OrgKey }>(items: Iterable<T>) =>
+          [...items].filter((x) => x.sessionId === session.id).map(({ org: _x, ...x }) => x);
+        return {
+          body: {
+            session: out,
+            calibrations: inThis(this.calibrations.values()),
+            clips: inThis(this.clips.values()),
+            analyses: [...this.analyses.values()]
+              .filter((a) => a.summary.sessionId === session.id)
+              .map((a) => a.summary),
+          },
+        };
+      }
+      case 'putCalibration': {
+        const body = c.body as CalibrationPut;
+        const id = c.params.id ?? '';
+        if (!this.repeated('calibration', id, org, body)) {
+          this.inSession(org, body.sessionId);
+          this.calibrations.set(id, {
+            id,
+            org: org ?? 'a',
+            ...body,
+            createdAt: new Date().toISOString(),
+          });
+          this.written('calibration', id, org, body);
+          const { org: _o, ...created } = this.calibrations.get(id) as Calibration & {
+            org: OrgKey;
+          };
+          return { status: 201, body: created };
+        }
+        const { org: _o, ...out } = this.calibrations.get(id) as Calibration & { org: OrgKey };
+        return { body: out };
+      }
+      case 'putClip': {
+        const body = c.body as ClipPut;
+        const id = c.params.id ?? '';
+        const repeat = this.repeated('clip', id, org, body);
+        if (!repeat) {
+          this.inSession(org, body.sessionId);
+          if (body.athleteId) inOrg(body.athleteId);
+          if (body.calibrationId) {
+            const cal = this.calibrations.get(body.calibrationId);
+            if (!cal || cal.org !== org || cal.sessionId !== body.sessionId)
+              throw new Problem(404, 'not_found');
+          }
+          this.clips.set(id, {
+            id,
+            org: org ?? 'a',
+            ...body,
+            deviceModel: body.deviceModel ?? null,
+            createdAt: new Date().toISOString(),
+          });
+          this.written('clip', id, org, body);
+        }
+        const { org: _o, ...out } = this.clips.get(id) as Clip & { org: OrgKey };
+        return { status: repeat ? 200 : 201, body: out };
+      }
+      case 'getClip': {
+        const clip = this.clips.get(c.params.id ?? '');
+        if (!clip || clip.org !== org) throw new Problem(404, 'not_found');
+        const { org: _o, ...out } = clip;
+        return { body: out };
+      }
+      case 'putAnalysis': {
+        const body = c.body as AnalysisPut;
+        const id = c.params.id ?? '';
+        if (this.repeated('analysis', id, org, body))
+          return { body: this.analysisIn(org, id).summary };
+        if (body.result.gate.status === 'fail') throw new Problem(422, 'gate_failed');
+        const clip = this.clips.get(body.clipId);
+        if (!clip || clip.org !== org) throw new Problem(404, 'not_found');
+        if (clip.role !== 'run' || clip.athleteId !== body.athleteId)
+          throw new Problem(400, 'validation');
+        const athlete = inOrg(body.athleteId);
+        const consent = this.summary(athlete.id).analysis;
+        if (!consent) throw new Problem(422, 'consent_required');
+        if (
+          isMinor(athlete.birthYear, new Date().getUTCFullYear()) &&
+          consent.givenBy !== 'guardian'
+        )
+          throw new Problem(422, 'consent_required');
+        const old = body.supersedes ? this.analyses.get(body.supersedes) : undefined;
+        if (body.supersedes && (!old || old.org !== org || old.summary.clipId !== body.clipId))
+          throw new Problem(400, 'validation');
+        const summary: AnalysisSummary = {
+          id,
+          clipId: body.clipId,
+          athleteId: body.athleteId,
+          sessionId: clip.sessionId,
+          mode: body.result.mode,
+          algorithmVersion: body.result.algorithmVersion,
+          poseModel: `${body.result.poseModel.id}@${body.result.poseModel.version}`,
+          gateStatus: body.result.gate.status,
+          hasKeypoints: false,
+          createdBy: coachId ?? '',
+          createdAt: new Date().toISOString(),
+          supersededBy: null,
+        };
+        this.analyses.set(id, { org: org ?? 'a', summary, result: body.result, keypoints: null });
+        if (old) old.summary.supersededBy = id;
+        this.written('analysis', id, org, body);
+        this.record(org ?? 'a', coachId, 'analysis.save', id);
+        return { status: 201, body: summary };
+      }
+      case 'putKeypoints': {
+        const bytes = c.body as Buffer;
+        const a = this.analysisIn(org, c.params.id ?? '');
+        if (a.keypoints) {
+          if (!a.keypoints.equals(bytes)) throw new Problem(409, 'conflict');
+          return { body: { bytes: a.keypoints.byteLength } };
+        }
+        let header: ReturnType<typeof readSkp1Header>;
+        try {
+          header = readSkp1Header(gunzipSync(bytes));
+        } catch {
+          throw new Problem(400, 'validation');
+        }
+        const clip = this.clips.get(a.summary.clipId);
+        if (
+          !header.ok ||
+          !clip ||
+          header.value.frameCount !== clip.frameCount ||
+          header.value.widthPx !== clip.widthPx ||
+          header.value.heightPx !== clip.heightPx
+        )
+          throw new Problem(400, 'validation');
+        a.keypoints = bytes;
+        a.summary.hasKeypoints = true;
+        return { status: 201, body: { bytes: bytes.byteLength } };
+      }
+      case 'getAnalysis': {
+        const a = this.analysisIn(org, c.params.id ?? '');
+        return { body: { ...a.summary, result: a.result, notes: this.notesOf(a.summary.id) } };
+      }
+      case 'getKeypoints': {
+        const a = this.analysisIn(org, c.params.id ?? '');
+        if (!a.keypoints) throw new Problem(404, 'not_found');
+        return { bytes: a.keypoints };
+      }
+      case 'athleteAnalyses': {
+        const athlete = inOrg(c.params.id ?? '');
+        const mode = c.query.get('mode');
+        const items = [...this.analyses.values()]
+          .filter(
+            (a) =>
+              a.org === org &&
+              a.summary.athleteId === athlete.id &&
+              a.summary.supersededBy === null &&
+              (!mode || a.summary.mode === mode),
+          )
+          .map((a) => this.historyEntry(a))
+          .sort(
+            (x, y) =>
+              y.sessionDate.localeCompare(x.sessionDate) || y.createdAt.localeCompare(x.createdAt),
+          );
+        return { body: { items, nextCursor: null } };
+      }
+      case 'deleteAnalysis': {
+        const a = this.analysisIn(org, c.params.id ?? '');
+        this.dropAnalysis(a.summary.id);
+        this.record(a.org, coachId, 'analysis.delete', a.summary.id);
+        return {};
+      }
+      case 'putNote': {
+        const body = c.body as NotePut;
+        const id = c.params.id ?? '';
+        this.analysisIn(org, body.analysisId);
+        const existing = this.notes.get(id);
+        if (existing && (existing.org !== org || existing.analysisId !== body.analysisId))
+          throw new Problem(409, 'conflict');
+        const now = new Date().toISOString();
+        const note = {
+          id,
+          org: org ?? 'a',
+          analysisId: body.analysisId,
+          coachId: existing?.coachId ?? coachId ?? '',
+          body: body.body,
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+        };
+        this.notes.set(id, note);
+        const { org: _o, ...out } = note;
+        return { status: existing ? 200 : 201, body: out };
+      }
+      case 'deleteNote': {
+        const note = this.notes.get(c.params.id ?? '');
+        if (!note || note.org !== org) throw new Problem(404, 'not_found');
+        this.notes.delete(note.id);
+        return {};
+      }
+      case 'postDeviceCheck': {
+        const body = c.body as DeviceCheckPost;
+        const existing = this.deviceChecks.get(body.id);
+        if (existing && existing.org !== org) throw new Problem(409, 'conflict');
+        const createdAt = existing?.createdAt ?? new Date().toISOString();
+        if (!existing) this.deviceChecks.set(body.id, { ...body, org: org ?? 'a', createdAt });
+        return { status: existing ? 200 : 201, body: { id: body.id, createdAt } };
+      }
+      case 'deviceProfiles':
+        return {
+          body: {
+            items: [
+              {
+                model: 'Samsung Galaxy S23 Ultra',
+                tier: 'A',
+                maxSlowmo: '1080p at 240 fps',
+                notes: null,
+                updatedAt: '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        };
       default:
         throw new Problem(404, 'not_found');
     }

@@ -128,6 +128,18 @@ export class Outbox {
     return this.flushing;
   }
 
+  /**
+   * Sends now, without waiting out the backoff of entries that failed on the network: for when
+   * the connection comes back and for "Sync now". Entries that failed for good stay failed.
+   */
+  async flushNow(): Promise<void> {
+    for (const entry of await this.storage.all()) {
+      if (entry.state === 'pending' && entry.nextAttemptAt > 0)
+        await this.storage.put({ ...entry, nextAttemptAt: 0 });
+    }
+    return this.flush();
+  }
+
   /** After the coach signs in again. */
   resume(): Promise<void> {
     this.paused = false;
@@ -217,6 +229,23 @@ export class Outbox {
     if (!this.options.onChange) return;
     this.options.onChange(await this.list(), { paused: this.paused, sending });
   }
+}
+
+/** True when the entry, or an entry it waits for (however indirectly), failed for good. */
+export function needsAttention(entry: OutboxEntry, entries: readonly OutboxEntry[]): boolean {
+  const byId = new Map(entries.map((e) => [e.id, e]));
+  const seen = new Set<string>();
+  const stack = [entry];
+  for (let e = stack.pop(); e; e = stack.pop()) {
+    if (seen.has(e.id)) continue;
+    seen.add(e.id);
+    if (e.state === 'failed') return true;
+    for (const id of e.dependsOn) {
+      const dependency = byId.get(id);
+      if (dependency) stack.push(dependency);
+    }
+  }
+  return false;
 }
 
 /** An in-memory store, for tests and for browsers without IndexedDB. */

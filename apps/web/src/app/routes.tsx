@@ -19,6 +19,17 @@ const devRoutes: RouteObject[] = DEV_PAGES
         path: '/dev/spike',
         lazy: async () => ({ Component: (await import('../features/dev/SpikePage')).SpikePage }),
       },
+      {
+        lazy: async () => ({ Component: (await import('./AppShell')).AppShell }),
+        children: [
+          {
+            path: '/dev/gallery',
+            lazy: async () => ({
+              Component: (await import('../features/dev/GalleryPage')).GalleryPage,
+            }),
+          },
+        ],
+      },
     ]
   : [];
 
@@ -88,6 +99,54 @@ export const routes: RouteObject[] = [
                 path: '/athletes/:id/consent',
                 lazy: async () => ({
                   Component: (await import('../features/athletes/ConsentPage')).ConsentPage,
+                }),
+              },
+              {
+                path: '/sessions/new',
+                lazy: async () => ({
+                  Component: (await import('../features/sessions/SessionFormPage')).SessionFormPage,
+                }),
+              },
+              {
+                path: '/sessions/:id',
+                lazy: async () => ({
+                  Component: (await import('../features/sessions/SessionPage')).SessionPage,
+                }),
+              },
+              {
+                path: '/sessions/:id/edit',
+                lazy: async () => ({
+                  Component: (await import('../features/sessions/SessionFormPage')).SessionFormPage,
+                }),
+              },
+              {
+                path: '/import',
+                lazy: async () => ({
+                  Component: (await import('../features/import/ImportPage')).ImportPage,
+                }),
+              },
+              {
+                path: '/analyse/:clipId',
+                lazy: async () => ({
+                  Component: (await import('../features/analyse/AnalysePage')).AnalysePage,
+                }),
+              },
+              {
+                path: '/analyses/:id',
+                lazy: async () => ({
+                  Component: (await import('../features/results/ResultPage')).ResultPage,
+                }),
+              },
+              {
+                path: '/compare',
+                lazy: async () => ({
+                  Component: (await import('../features/compare/ComparePage')).ComparePage,
+                }),
+              },
+              {
+                path: '/device-check',
+                lazy: async () => ({
+                  Component: (await import('../features/device/DeviceCheckPage')).DeviceCheckPage,
                 }),
               },
             ],

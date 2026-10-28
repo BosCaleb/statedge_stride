@@ -1,12 +1,14 @@
 import '../lib/zodSetup';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Outlet } from 'react-router';
-import { ApiProvider, createQueryClient } from '../lib/apiContext';
+import { ApiProvider, createQueryClient, QUERY_CACHE_MAX_AGE_MS } from '../lib/apiContext';
 import { FakeAuthProvider } from '../lib/auth/fakeAuth';
-import { onSignOut } from '../lib/auth/signOutCleanup';
+import { useAuth } from '../lib/auth/authContext';
+import { onSignOut, signOutUnfinished } from '../lib/auth/signOutCleanup';
 import { createMsal, MsalAuthProvider } from '../lib/auth/msalAuth';
 import { config } from '../lib/config';
+import { clearLocalData } from '../lib/local/cleanup';
 import { OutboxProvider } from '../lib/outbox/OutboxProvider';
 import { idbPersister, PERSISTED_QUERY_KEYS } from '../lib/queryPersister';
 import { CapabilityNotice } from './CapabilityNotice';
@@ -32,6 +34,18 @@ function Auth({ children }: { children: ReactNode }) {
 
 const persister = idbPersister();
 
+/** Finishes a sign-out whose wipe was interrupted (the app closed or reloaded during it). */
+function FinishSignOut() {
+  const auth = useAuth();
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || auth.status === 'loading') return;
+    done.current = true;
+    if (signOutUnfinished()) void auth.signOut();
+  }, [auth]);
+  return null;
+}
+
 export function AppRoot() {
   const [queryClient] = useState(() => {
     const client = createQueryClient();
@@ -39,6 +53,7 @@ export function AppRoot() {
       client.clear();
       await persister.removeClient();
     });
+    onSignOut(clearLocalData);
     return client;
   });
   return (
@@ -48,7 +63,7 @@ export function AppRoot() {
           client={queryClient}
           persistOptions={{
             persister,
-            maxAge: 7 * 24 * 60 * 60 * 1000,
+            maxAge: QUERY_CACHE_MAX_AGE_MS,
             buster: 'v1',
             dehydrateOptions: {
               shouldDehydrateQuery: (query) =>
@@ -58,6 +73,7 @@ export function AppRoot() {
           }}
         >
           <OutboxProvider>
+            <FinishSignOut />
             <Outlet />
             <UpdatePrompt />
             <CapabilityNotice />

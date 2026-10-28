@@ -7,3 +7,6 @@ import './invites';
 import './athletes';
 import './sessions';
 import './devices';
+import './captures';
+import './analyses';
+import './notes';

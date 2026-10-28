@@ -1,3 +1,6 @@
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -103,6 +106,29 @@ function staticWebAppConfig(env: Record<string, string>): Plugin {
   };
 }
 
+/**
+ * End-to-end test builds only (VITE_E2E=true): ships the recorded keypoint fixtures at
+ * /e2e-fixtures/, for the fixture pose estimator. Other builds never contain them.
+ */
+function e2eFixtures(enabled: boolean): Plugin {
+  return {
+    name: 'stride-e2e-fixtures',
+    apply: 'build',
+    async generateBundle() {
+      if (!enabled) return;
+      const dir = fileURLToPath(new URL('../../fixtures/keypoints/', import.meta.url));
+      for (const name of await readdir(dir)) {
+        if (!name.endsWith('.skp1.gz')) continue;
+        this.emitFile({
+          type: 'asset',
+          fileName: `e2e-fixtures/${name}`,
+          source: await readFile(join(dir, name)),
+        });
+      }
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), ['VITE_', 'APPLICATIONINSIGHTS_']);
   return {
@@ -110,6 +136,7 @@ export default defineConfig(({ mode }) => {
       react(),
       serveModelsInDev(),
       staticWebAppConfig(env),
+      e2eFixtures(env.VITE_E2E === 'true'),
       VitePWA({
         registerType: 'prompt',
         injectRegister: false,
@@ -137,7 +164,11 @@ export default defineConfig(({ mode }) => {
         workbox: {
           // The app shell, fonts, every route chunk (the guide and the offline analysis loop
           // included) and the strings. Not the pose model: it is large and fetched on demand.
-          globPatterns: ['**/*.{js,css,html,woff2,svg,png,webmanifest}'],
+          globPatterns: [
+            '**/*.{js,css,html,woff2,svg,png,webmanifest}',
+            // Test builds: the recorded keypoints stand in for the pose model offline.
+            ...(env.VITE_E2E === 'true' ? ['e2e-fixtures/*.gz'] : []),
+          ],
           globIgnores: ['models/**'],
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
           navigateFallback: '/index.html',

@@ -70,6 +70,8 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
         },
       },
     );
+    // Registered with the outbox itself, so that the wipe can run before any effect has.
+    onSignOut(() => box.clear());
     return box;
   });
 
@@ -81,7 +83,7 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
     const flush = () => void outbox.flush();
     const online = () => {
       useOutboxStore.getState().set({ online: true });
-      flush();
+      void outbox.flushNow();
     };
     const offline = () => useOutboxStore.getState().set({ online: false });
     const visible = () => {
@@ -90,13 +92,11 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
     window.addEventListener('online', online);
     window.addEventListener('offline', offline);
     document.addEventListener('visibilitychange', visible);
-    const stop = onSignOut(() => outbox.clear());
     void outbox.list().then(() => outbox.flush());
     return () => {
       window.removeEventListener('online', online);
       window.removeEventListener('offline', offline);
       document.removeEventListener('visibilitychange', visible);
-      stop();
     };
   }, [outbox]);
 

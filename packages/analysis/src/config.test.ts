@@ -9,6 +9,7 @@ import { ALGORITHM_VERSION, defaultAnalysisConfig, defaultConfig } from './confi
  */
 const CONFIG_FINGERPRINTS: Record<string, string> = {
   '0.1.0': '61057c21',
+  '0.1.1': '9b924b80',
 };
 
 /** FNV-1a 32-bit hash of the canonical JSON. */
