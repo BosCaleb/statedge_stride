@@ -48,7 +48,9 @@ export function FakeAuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback((returnTo?: string) => {
     rememberReturnTo(returnTo);
-    window.location.assign('/signin');
+    window.location.assign(
+      returnTo ? `/signin?returnTo=${encodeURIComponent(returnTo)}` : '/signin',
+    );
     return Promise.resolve();
   }, []);
 

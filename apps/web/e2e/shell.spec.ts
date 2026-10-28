@@ -4,8 +4,8 @@ import { expect, PEOPLE, signIn, test } from './fixtures';
 test.describe('app shell', () => {
   test('a coach signs in and lands on the page they asked for', async ({ page, api }) => {
     await signIn(page, PEOPLE.coachA, '/athletes');
-    await expect(page.getByRole('heading', { name: 'Athletes' })).toBeVisible();
-    await expect(page.getByRole('status', { name: /Sync status/ })).toContainText('Saved');
+    await expect(page.getByRole('heading', { name: 'Athletes', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Sync status: Saved/ })).toBeVisible();
     const nav = page.getByRole('navigation', { name: 'Main' });
     await expect(nav.getByRole('link')).toHaveText(['Home', 'Athletes', 'Guide']);
     await nav.getByRole('link', { name: 'Home' }).click();

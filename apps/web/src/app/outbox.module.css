@@ -1,0 +1,38 @@
+.panel {
+  width: min(94vw, 520px);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+  max-height: 60vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.entry {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.state,
+.details {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

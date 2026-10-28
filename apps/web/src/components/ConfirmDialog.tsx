@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { strings } from '../lib/strings';
 import ui from './ui.module.css';
 
@@ -26,6 +26,7 @@ export function ConfirmDialog({
   onCancel: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
@@ -34,8 +35,8 @@ export function ConfirmDialog({
   }, [open]);
 
   return (
-    <dialog ref={ref} className={ui.dialog} aria-labelledby="confirm-title" onCancel={onCancel}>
-      <h2 id="confirm-title">{title}</h2>
+    <dialog ref={ref} className={ui.dialog} aria-labelledby={titleId} onCancel={onCancel}>
+      <h2 id={titleId}>{title}</h2>
       {children}
       <div className={ui.dialogActions}>
         {hideCancel ? null : (

@@ -20,7 +20,9 @@ export function SignInPage() {
   const [search] = useSearchParams();
   const returnTo = search.get('returnTo') ?? undefined;
 
-  useEffect(() => rememberReturnTo(returnTo), [returnTo]);
+  useEffect(() => {
+    if (returnTo) rememberReturnTo(returnTo);
+  }, [returnTo]);
 
   if (auth.status === 'loading') return <LoadingState label={strings.auth.signingIn} />;
   if (auth.status === 'signedIn') return <Navigate to={readReturnTo()} replace />;

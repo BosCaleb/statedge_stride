@@ -66,6 +66,30 @@ export const routes: RouteObject[] = [
                   Component: (await import('../features/athletes/AthletesPage')).AthletesPage,
                 }),
               },
+              {
+                path: '/athletes/new',
+                lazy: async () => ({
+                  Component: (await import('../features/athletes/AthleteFormPage')).AthleteFormPage,
+                }),
+              },
+              {
+                path: '/athletes/:id',
+                lazy: async () => ({
+                  Component: (await import('../features/athletes/AthletePage')).AthletePage,
+                }),
+              },
+              {
+                path: '/athletes/:id/edit',
+                lazy: async () => ({
+                  Component: (await import('../features/athletes/AthleteFormPage')).AthleteFormPage,
+                }),
+              },
+              {
+                path: '/athletes/:id/consent',
+                lazy: async () => ({
+                  Component: (await import('../features/athletes/ConsentPage')).ConsentPage,
+                }),
+              },
             ],
           },
           {

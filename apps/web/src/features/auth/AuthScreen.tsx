@@ -13,7 +13,10 @@ export function AuthScreen({ children }: { children: ReactNode }) {
         </p>
         {children}
         <p className={styles.footer}>
-          <Link to="/guide">{strings.guide.title}</Link>
+          <Link to="/guide">{strings.guide.title}</Link> ·{' '}
+          <a href="/privacy.html" target="_blank" rel="noopener">
+            {strings.privacy.notice}
+          </a>
         </p>
       </div>
     </main>
