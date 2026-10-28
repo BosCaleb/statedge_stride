@@ -1,0 +1,18 @@
+{
+  "tasksVisionVersion": "1.2.0",
+  "wasmDir": "tasks-vision-1.2.0",
+  "models": {
+    "full": {
+      "file": "pose_landmarker_full-f16-v1.task",
+      "url": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+      "sha256": "5134a3aad27a58b93da0088d431f366da362b44e3ccfbe3462b3827a839011b1",
+      "bytes": 9398198
+    },
+    "heavy": {
+      "file": "pose_landmarker_heavy-f16-v1.task",
+      "url": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task",
+      "sha256": "64437af838a65d18e5ba7a0d39b465540069bc8aae8308de3e318aad31fcbc7b",
+      "bytes": 30664242
+    }
+  }
+}

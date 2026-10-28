@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fft, phaseCorrelation, shiftInFramePixels } from './stability';
+import { fft, phaseCorrelation, shiftInFramePixels, toThumbnail } from './stability';
 import { seededRandom } from './stats';
 
 /** A textured test scene (smooth random blobs) sampled with a sub-pixel offset. */
@@ -69,8 +69,19 @@ describe('phaseCorrelation', () => {
     // Paint a bright "athlete" in different places in the two frames.
     for (let y = 40; y < 110; y++) for (let x = 60; x < 90; x++) a[y * w + x] = 5000;
     for (let y = 40; y < 110; y++) for (let x = 140; x < 170; x++) b[y * w + x] = 5000;
-    const s = phaseCorrelation(a, b, w, h, { x: 50, y: 30, width: 130, height: 90 });
+    const s = phaseCorrelation(a, b, w, h, [
+      { x: 55, y: 35, width: 40, height: 80 },
+      { x: 135, y: 35, width: 40, height: 80 },
+    ]);
     expect(Math.hypot(s.dx, s.dy)).toBeLessThan(0.3);
+  });
+
+  it('maps a full-frame box to thumbnail pixels', () => {
+    const box = toThumbnail({ x: 960, y: 540, width: 192, height: 108 }, 1920, 1080, 256, 144);
+    expect(box.x).toBeCloseTo(128, 9);
+    expect(box.y).toBeCloseTo(72, 9);
+    expect(box.width).toBeCloseTo(25.6, 9);
+    expect(box.height).toBeCloseTo(14.4, 9);
   });
 
   it('converts to full-resolution pixels', () => {

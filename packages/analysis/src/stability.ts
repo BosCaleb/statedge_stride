@@ -79,23 +79,19 @@ function nextPowerOfTwo(n: number): number {
 }
 
 /**
- * Prepares a thumbnail for correlation: pixels inside `mask` (the athlete's box, in thumbnail
+ * Prepares a thumbnail for correlation: pixels inside any of `masks` (athlete boxes, in thumbnail
  * pixels) take the mean of the rest, then a Hann window is applied and the image is zero-padded
- * to a square power of two.
+ * to a square power of two. The same masks are applied to both images being compared.
  */
 function prepare(
   image: Float32Array,
   width: number,
   height: number,
   size: number,
-  mask: Roi | null,
+  masks: readonly Roi[],
 ): Float64Array {
   const inMask = (x: number, y: number) =>
-    mask !== null &&
-    x >= mask.x &&
-    x < mask.x + mask.width &&
-    y >= mask.y &&
-    y < mask.y + mask.height;
+    masks.some((m) => x >= m.x && x < m.x + m.width && y >= m.y && y < m.y + m.height);
   let sum = 0;
   let count = 0;
   for (let y = 0; y < height; y++) {
@@ -151,11 +147,11 @@ export function phaseCorrelation(
   b: Float32Array,
   width: number,
   height: number,
-  mask: Roi | null = null,
+  masks: readonly Roi[] = [],
 ): Shift {
   const size = nextPowerOfTwo(Math.max(width, height));
-  const aRe = prepare(a, width, height, size, mask);
-  const bRe = prepare(b, width, height, size, mask);
+  const aRe = prepare(a, width, height, size, masks);
+  const bRe = prepare(b, width, height, size, masks);
   const aIm = new Float64Array(size * size);
   const bIm = new Float64Array(size * size);
   fft2d(aRe, aIm, size, false);
@@ -200,4 +196,17 @@ export function shiftInFramePixels(
   frameWidthPx: number,
 ): number {
   return Math.hypot(shift.dx, shift.dy) * (frameWidthPx / thumbnailWidth);
+}
+
+/** A full-frame box in thumbnail pixels. */
+export function toThumbnail(
+  box: Roi,
+  frameWidthPx: number,
+  frameHeightPx: number,
+  width: number,
+  height: number,
+): Roi {
+  const sx = width / frameWidthPx;
+  const sy = height / frameHeightPx;
+  return { x: box.x * sx, y: box.y * sy, width: box.width * sx, height: box.height * sy };
 }

@@ -10,3 +10,4 @@ test-results/
 fixtures/**/*.skp1
 docs/spec.md
 infra/**/.terraform/
+fixtures/manifest.json

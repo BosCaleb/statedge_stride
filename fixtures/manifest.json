@@ -1,0 +1,298 @@
+{
+  "version": 1,
+  "fixtures": [
+    {
+      "name": "distance-ltr",
+      "file": "distance-ltr.skp1.gz",
+      "source": "synthetic",
+      "description": "Distance running, left to right, 1 px noise. A clean clip.",
+      "mode": "distance",
+      "declaredFps": 240,
+      "pxPerM": 150,
+      "calibrated": true,
+      "cameraShiftPx": 1,
+      "expected": {
+        "gate": [
+          "pass",
+          "conditional"
+        ],
+        "failChecks": [],
+        "metrics": {
+          "cadence": [
+            174,
+            178
+          ],
+          "overstride": [
+            16,
+            28
+          ],
+          "trunk_lean": [
+            5,
+            7
+          ],
+          "step_length": [
+            1.3136363636363635,
+            1.4136363636363636
+          ],
+          "speed": [
+            3.85,
+            4.15
+          ]
+        }
+      }
+    },
+    {
+      "name": "distance-rtl",
+      "file": "distance-rtl.skp1.gz",
+      "source": "synthetic",
+      "description": "Distance running, right to left (left leg nearest the camera), 1 px noise.",
+      "mode": "distance",
+      "declaredFps": 240,
+      "pxPerM": 150,
+      "calibrated": true,
+      "cameraShiftPx": 1,
+      "expected": {
+        "gate": [
+          "pass",
+          "conditional"
+        ],
+        "failChecks": [],
+        "metrics": {
+          "cadence": [
+            174,
+            178
+          ],
+          "overstride": [
+            16,
+            28
+          ],
+          "trunk_lean": [
+            5,
+            7
+          ],
+          "step_length": [
+            1.3136363636363635,
+            1.4136363636363636
+          ]
+        }
+      }
+    },
+    {
+      "name": "sprint-ltr",
+      "file": "sprint-ltr.skp1.gz",
+      "source": "synthetic",
+      "description": "Sprinting, left to right, 1 px noise.",
+      "mode": "sprint",
+      "declaredFps": 240,
+      "pxPerM": 150,
+      "calibrated": true,
+      "cameraShiftPx": 1,
+      "expected": {
+        "gate": [
+          "pass",
+          "conditional"
+        ],
+        "failChecks": [],
+        "metrics": {
+          "cadence": [
+            267,
+            273
+          ],
+          "stride_frequency": [
+            2.19,
+            2.31
+          ],
+          "contact_time": [
+            85,
+            135
+          ],
+          "trunk_lean": [
+            9,
+            11
+          ],
+          "speed": [
+            7.3,
+            7.7
+          ]
+        }
+      }
+    },
+    {
+      "name": "sprint-rtl",
+      "file": "sprint-rtl.skp1.gz",
+      "source": "synthetic",
+      "description": "Sprinting, right to left, 1 px noise.",
+      "mode": "sprint",
+      "declaredFps": 240,
+      "pxPerM": 150,
+      "calibrated": true,
+      "cameraShiftPx": 1,
+      "expected": {
+        "gate": [
+          "pass",
+          "conditional"
+        ],
+        "failChecks": [],
+        "metrics": {
+          "cadence": [
+            267,
+            273
+          ],
+          "contact_time": [
+            85,
+            135
+          ],
+          "trunk_lean": [
+            9,
+            11
+          ]
+        }
+      }
+    },
+    {
+      "name": "occluded-far-leg",
+      "file": "occluded-far-leg.skp1.gz",
+      "source": "synthetic",
+      "description": "The far leg is often hidden: low far-side visibility and frequent drop-outs.",
+      "mode": "distance",
+      "declaredFps": 240,
+      "pxPerM": 150,
+      "calibrated": true,
+      "cameraShiftPx": 1,
+      "expected": {
+        "gate": [
+          "pass",
+          "conditional"
+        ],
+        "failChecks": [],
+        "metrics": {
+          "cadence": [
+            173,
+            179
+          ]
+        }
+      }
+    },
+    {
+      "name": "camera-moved",
+      "file": "camera-moved.skp1.gz",
+      "source": "synthetic",
+      "description": "Good keypoints, but the camera moved 20 px against the calibration frame.",
+      "mode": "distance",
+      "declaredFps": 240,
+      "pxPerM": 150,
+      "calibrated": true,
+      "cameraShiftPx": 20,
+      "expected": {
+        "gate": [
+          "fail"
+        ],
+        "failChecks": [
+          "camera_stable"
+        ],
+        "metrics": {}
+      }
+    },
+    {
+      "name": "wrong-mode-30fps",
+      "file": "wrong-mode-30fps.skp1.gz",
+      "source": "synthetic",
+      "description": "Recorded in normal video mode (30 fps) instead of slow motion.",
+      "mode": "distance",
+      "declaredFps": 30,
+      "pxPerM": 150,
+      "calibrated": true,
+      "cameraShiftPx": 1,
+      "expected": {
+        "gate": [
+          "fail"
+        ],
+        "failChecks": [
+          "fps_ok"
+        ],
+        "metrics": {}
+      }
+    },
+    {
+      "name": "wrong-frame-rate",
+      "file": "wrong-frame-rate.skp1.gz",
+      "source": "synthetic",
+      "description": "A 240 fps capture treated as 960 fps (the Super slow-mo mix-up), so cadence comes out absurd.",
+      "mode": "distance",
+      "declaredFps": 960,
+      "pxPerM": 120,
+      "calibrated": true,
+      "cameraShiftPx": 1,
+      "expected": {
+        "gate": [
+          "fail"
+        ],
+        "failChecks": [
+          "timebase_plausible"
+        ],
+        "metrics": {}
+      }
+    },
+    {
+      "name": "athlete-stops",
+      "file": "athlete-stops.skp1.gz",
+      "source": "synthetic",
+      "description": "The athlete stops 40 percent of the way through the clip.",
+      "mode": "distance",
+      "declaredFps": 240,
+      "pxPerM": 150,
+      "calibrated": true,
+      "cameraShiftPx": 1,
+      "expected": {
+        "gate": [
+          "fail"
+        ],
+        "failChecks": [
+          "steady_direction"
+        ],
+        "metrics": {}
+      }
+    },
+    {
+      "name": "body-out-of-frame",
+      "file": "body-out-of-frame.skp1.gz",
+      "source": "synthetic",
+      "description": "The legs leave the bottom of the frame for most of the clip.",
+      "mode": "distance",
+      "declaredFps": 240,
+      "pxPerM": 150,
+      "calibrated": true,
+      "cameraShiftPx": 1,
+      "expected": {
+        "gate": [
+          "fail"
+        ],
+        "failChecks": [
+          "body_visible"
+        ],
+        "metrics": {}
+      }
+    },
+    {
+      "name": "side-labels-mismatch",
+      "file": "side-labels-mismatch.skp1.gz",
+      "source": "synthetic",
+      "description": "The far side looks clearer than the near side, so left and right labels are uncertain.",
+      "mode": "distance",
+      "declaredFps": 240,
+      "pxPerM": 150,
+      "calibrated": true,
+      "cameraShiftPx": 1,
+      "expected": {
+        "gate": [
+          "conditional"
+        ],
+        "failChecks": [],
+        "warnOrFailChecks": [
+          "side_labels"
+        ],
+        "metrics": {}
+      }
+    }
+  ]
+}

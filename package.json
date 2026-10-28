@@ -9,9 +9,9 @@
   "scripts": {
     "dev": "tsx scripts/dev.ts",
     "build": "pnpm --filter @stride/web build && pnpm --filter @stride/api build",
-    "test": "vitest run --project analysis --project shared --project web --project api",
+    "test": "vitest run --project analysis --project shared --project fixtures --project web --project api",
     "test:db": "vitest run --project api-db",
-    "test:watch": "vitest --project analysis --project shared --project web --project api",
+    "test:watch": "vitest --project analysis --project shared --project fixtures --project web --project api",
     "lint": "eslint . && prettier --check . && stylelint \"apps/web/src/**/*.css\"",
     "format": "prettier --write .",
     "typecheck": "pnpm -r --parallel run typecheck && tsc -p scripts/tsconfig.json",

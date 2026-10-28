@@ -101,9 +101,13 @@ export function clipChecks(input: ClipCheckInput, g: GateConfig): GateCheck[] {
   let shiftLevel: CheckLevel = 'pass';
   if (shift !== null && shift > g.cameraShiftPx.fail) shiftLevel = 'fail';
   else if (shift !== null && shift > g.cameraShiftPx.warn) shiftLevel = 'warn';
-  checks.push(
-    check('camera_stable', shiftLevel, shift === null ? 'not measured' : `${shift.toFixed(1)} px`),
-  );
+  const shiftDetail =
+    shift === null
+      ? 'not measured'
+      : Number.isFinite(shift)
+        ? `${shift.toFixed(1)} px`
+        : 'not comparable';
+  checks.push(check('camera_stable', shiftLevel, shiftDetail));
   return checks;
 }
 

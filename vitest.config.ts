@@ -7,6 +7,7 @@ export default defineConfig({
     projects: [
       'packages/analysis',
       'packages/shared',
+      'fixtures',
       'apps/web',
       'apps/api/vitest.config.ts',
       'apps/api/vitest.db.config.ts',
