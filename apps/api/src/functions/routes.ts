@@ -5,3 +5,5 @@ import './me';
 import './org';
 import './invites';
 import './athletes';
+import './sessions';
+import './devices';
