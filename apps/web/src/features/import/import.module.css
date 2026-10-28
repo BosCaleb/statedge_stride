@@ -1,0 +1,38 @@
+/* Import: the session summary, clip cards and role choices. */
+
+.sessionCard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stepTitle {
+  margin: 0;
+  font-size: var(--text-body);
+}
+
+.sessionLine {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.fileName {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-2);
+}
+
+.consent {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+  margin-top: var(--space-1);
+}

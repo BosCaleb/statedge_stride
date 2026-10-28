@@ -1,8 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import type { Page, Route } from '@playwright/test';
 import type { Athlete, Consent } from '@stride/shared/api/athletes';
+import type { DeviceCheckPost } from '@stride/shared/api/devices';
 import type { AuditEntry, Member } from '@stride/shared/api/org';
-import { routeEntries, type ROUTES, type RouteDef, type RouteName } from '@stride/shared/api/routes';
+import type { Session } from '@stride/shared/api/sessions';
+import {
+  routeEntries,
+  type ROUTES,
+  type RouteDef,
+  type RouteName,
+} from '@stride/shared/api/routes';
 import { consentRuleProblem } from '@stride/shared/consent';
 import { DEV_IDENTITIES, DEV_ORGS } from '@stride/shared/devIdentities';
 import type { AuditAction } from '@stride/shared/enums';
@@ -57,6 +64,8 @@ export class StubApi {
   readonly invites: Invite[] = [];
   readonly coaches: (Member & { org: OrgKey; oid: string })[] = [];
   readonly audit: (AuditEntry & { org: OrgKey })[] = [];
+  readonly sessions = new Map<string, Session & { org: OrgKey }>();
+  readonly deviceChecks = new Map<string, DeviceCheckPost & { org: OrgKey; createdAt: string }>();
   private failures: { route: RouteName; status: number; code: string }[] = [];
   /** Route interception runs before the network, so going offline must be simulated here too. */
   offline = false;
@@ -81,6 +90,41 @@ export class StubApi {
 
   async attach(page: Page): Promise<void> {
     await page.route(`${API_ORIGIN}/api/**`, (route) => this.handle(route));
+  }
+
+  /** Adds an athlete to an organisation, with an adult's verbal consent for analysis. */
+  seedAthlete(
+    org: OrgKey,
+    athlete: { firstName: string; lastName: string; birthYear: number },
+    consent = true,
+  ): string {
+    const id = randomUUID();
+    this.athletes.set(id, {
+      id,
+      org,
+      ...athlete,
+      externalRef: null,
+      createdAt: new Date().toISOString(),
+      consents: { analysis: null, sharing: null, clip_storage: null },
+    });
+    if (consent) {
+      const consentId = randomUUID();
+      this.consents.set(consentId, {
+        id: consentId,
+        org,
+        athleteId: id,
+        purpose: 'analysis',
+        givenBy: 'athlete',
+        givenByName: `${athlete.firstName} ${athlete.lastName}`,
+        relationship: null,
+        evidence: 'verbal',
+        givenOn: '2026-03-01',
+        recordedBy: this.coaches.find((c) => c.org === org)?.id ?? '',
+        recordedAt: new Date().toISOString(),
+        withdrawnAt: null,
+      });
+    }
+    return id;
   }
 
   /** The next request to this route answers with a problem instead. */
@@ -448,6 +492,65 @@ export class StubApi {
         invite.acceptedBy = c.person.oid;
         return { body: this.me(c.person, invite.org) };
       }
+      case 'listSessions': {
+        const items = [...this.sessions.values()]
+          .filter((x) => x.org === org)
+          .sort(
+            (x, y) =>
+              y.sessionDate.localeCompare(x.sessionDate) || y.createdAt.localeCompare(x.createdAt),
+          )
+          .map(({ org: _o, ...x }) => x);
+        return { body: { items, nextCursor: null } };
+      }
+      case 'putSession': {
+        const body = c.body as z.output<typeof ROUTES.putSession.body>;
+        const id = c.params.id ?? '';
+        const existing = this.sessions.get(id);
+        if (existing && existing.org !== org) throw new Problem(409, 'conflict');
+        const session = {
+          id,
+          org: org ?? 'a',
+          sessionDate: body.sessionDate,
+          place: body.place ?? null,
+          surface: body.surface ?? null,
+          footwear: body.footwear ?? null,
+          mode: body.mode,
+          notes: body.notes ?? null,
+          createdBy: existing?.createdBy ?? coachId ?? '',
+          createdAt: existing?.createdAt ?? new Date().toISOString(),
+        };
+        this.sessions.set(id, session);
+        const { org: _o, ...out } = session;
+        return { status: existing ? 200 : 201, body: out };
+      }
+      case 'getSession': {
+        const session = this.sessions.get(c.params.id ?? '');
+        if (!session || session.org !== org) throw new Problem(404, 'not_found');
+        const { org: _o, ...out } = session;
+        return { body: { session: out, calibrations: [], clips: [], analyses: [] } };
+      }
+      case 'postDeviceCheck': {
+        const body = c.body as DeviceCheckPost;
+        const existing = this.deviceChecks.get(body.id);
+        if (existing && existing.org !== org) throw new Problem(409, 'conflict');
+        const createdAt = existing?.createdAt ?? new Date().toISOString();
+        if (!existing) this.deviceChecks.set(body.id, { ...body, org: org ?? 'a', createdAt });
+        return { status: existing ? 200 : 201, body: { id: body.id, createdAt } };
+      }
+      case 'deviceProfiles':
+        return {
+          body: {
+            items: [
+              {
+                model: 'Samsung Galaxy S23 Ultra',
+                tier: 'A',
+                maxSlowmo: '1080p at 240 fps',
+                notes: null,
+                updatedAt: '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        };
       default:
         throw new Problem(404, 'not_found');
     }

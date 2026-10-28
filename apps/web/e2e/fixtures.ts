@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { test as base, expect, type Page } from '@playwright/test';
 import { DEV_IDENTITIES } from '@stride/shared/devIdentities';
 import { StubApi } from './stubApi';
@@ -42,6 +43,19 @@ export const test = base.extend<{ api: StubApi; cspViolations: string[] }>({
 export async function signIn(page: Page, person: Person, path = '/'): Promise<void> {
   await page.goto(path);
   await page.getByRole('button', { name: `Sign in as ${person.email}` }).click();
+}
+
+/** Fails on serious or critical WCAG 2.1 AA problems on the current page. */
+export async function expectAccessible(page: Page): Promise<void> {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  const serious = results.violations.filter(
+    (v) => v.impact === 'serious' || v.impact === 'critical',
+  );
+  expect(
+    serious.map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`),
+  ).toEqual([]);
 }
 
 export { expect };

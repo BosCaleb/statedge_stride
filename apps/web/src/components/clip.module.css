@@ -1,0 +1,68 @@
+/* Clip information cards (import, session, device check). */
+
+.card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+.label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.name {
+  margin: 0;
+  font-size: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--text-muted);
+  font-size: var(--text-small);
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.note {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-small);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: var(--text-small);
+}
+
+.picker {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+.pickerInput:focus-visible + .pickerLabel {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+}

@@ -1,0 +1,248 @@
+/* Metric cards, confidence badges, the gate banner and the event timeline. Neutral colours:
+   nothing here judges a value as good or bad. */
+
+.card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.name {
+  margin: 0;
+  font-size: var(--text-body);
+}
+
+.value,
+.valueButton {
+  margin: 0;
+  color: var(--text);
+  text-align: left;
+}
+
+.valueButton {
+  min-height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.number {
+  font-family: var(--font-display);
+  font-size: var(--text-metric);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  color: var(--text-muted);
+}
+
+.secondary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.sides {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.sides div {
+  padding-left: var(--space-2);
+  border-left: 4px solid var(--border);
+}
+
+.sides .left {
+  border-left-color: var(--color-left);
+}
+
+.sides .right {
+  border-left-color: var(--color-right);
+}
+
+.sides dt {
+  color: var(--text-muted);
+  font-size: var(--text-small);
+}
+
+.sides dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.description {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.small {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+}
+
+.reasons {
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-small);
+}
+
+.confidence {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: var(--text-small);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.dotOn,
+.dotOff {
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--text);
+  border-radius: 50%;
+}
+
+.dotOn {
+  background: var(--text);
+}
+
+.banner {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.banner .small {
+  color: inherit;
+}
+
+.bannerTitle {
+  margin: 0;
+  font-size: var(--text-large);
+}
+
+.bannerList {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bannerList p {
+  margin: 0;
+}
+
+.bannerMessage {
+  font-weight: 600;
+}
+
+.timeline {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.track {
+  position: relative;
+  height: 104px;
+  margin: 0 var(--space-4);
+  border-radius: var(--radius-small);
+  background: linear-gradient(
+    to bottom,
+    transparent 0 50%,
+    var(--border) 50% calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+
+.cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--text);
+  transform: translateX(-1px);
+}
+
+.marker {
+  position: absolute;
+  display: grid;
+  width: 28px;
+  height: 48px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-white);
+  font-size: var(--text-small);
+  font-weight: 700;
+  cursor: pointer;
+  transform: translateX(-50%);
+}
+
+.marker span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 2px solid currentcolor;
+  border-radius: 50%;
+}
+
+.markerLeft {
+  top: 2px;
+}
+
+.markerRight {
+  bottom: 2px;
+}
+
+.markerLeft span {
+  border-color: var(--color-left);
+  background: var(--color-left);
+  color: var(--color-navy);
+}
+
+.markerRight span {
+  border-color: var(--color-right);
+  border-radius: 4px;
+  background: var(--color-right);
+}
+
+.markerTo span {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.marker[aria-current='true'] span {
+  outline: 3px solid var(--text);
+  outline-offset: 1px;
+}

@@ -1,6 +1,7 @@
 import { Link, Outlet } from 'react-router';
 import { useAuth } from '../lib/auth/authContext';
 import { useMe } from '../lib/apiContext';
+import { useClipRetention } from '../lib/local/localQueries';
 import { strings } from '../lib/strings';
 import { AccountMenu } from './AccountMenu';
 import { BottomNav } from './BottomNav';
@@ -12,6 +13,7 @@ export function AppShell() {
   const auth = useAuth();
   const signedIn = auth.status === 'signedIn';
   const me = useMe(signedIn);
+  useClipRetention(me.data?.organisation.clipRetentionDays);
   return (
     <div className={styles.shell}>
       <a className={styles.skip} href="#main">

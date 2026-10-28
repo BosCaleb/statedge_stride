@@ -55,9 +55,10 @@ export function FakeAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await runSignOutCleanup();
+    // End the session first, so that leaving the page during the wipe cannot keep it open.
     localStorage.removeItem(STORAGE_KEY);
     setIdentity(null);
+    await runSignOutCleanup();
   }, []);
 
   const value = useMemo<AuthState>(

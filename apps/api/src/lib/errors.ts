@@ -78,4 +78,4 @@ export function validationError(error: z.ZodError, prefix: string): ApiError {
 }
 
 /** The uniform 404 that never says whether the resource exists in another organisation. */
-export const notFound = () => new ApiError('not_found');
+export const notFound = (detail?: string) => new ApiError('not_found', detail);

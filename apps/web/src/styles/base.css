@@ -10,6 +10,11 @@ html {
   /* stylelint-disable-next-line property-no-vendor-prefix -- iOS Safari reads only the prefixed form */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+
+  /* Whatever is scrolled or tabbed to stays clear of the sticky header and the fixed bottom
+     navigation. */
+  scroll-padding-top: calc(var(--tap) + var(--space-6));
+  scroll-padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + var(--space-4));
 }
 
 body {

@@ -1,12 +1,18 @@
+import { formatDisplayDate } from '@stride/shared/dates';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { EmptyState } from '../../components/States';
+import { EmptyState, LoadingState } from '../../components/States';
 import { useMe } from '../../lib/apiContext';
 import { isReadyOffline, prepareOffline } from '../../lib/offline';
 import { strings } from '../../lib/strings';
 import ui from '../../components/ui.module.css';
 import shell from '../../app/shell.module.css';
+import { useSessions } from '../sessions/sessionData';
+import sessionStyles from '../sessions/sessions.module.css';
 import styles from './home.module.css';
+
+/** How many sessions Home lists. */
+const RECENT_SESSIONS = 5;
 
 type OfflineState =
   { kind: 'unknown' | 'idle' | 'ready' | 'failed' } | { kind: 'downloading'; percent: number };
@@ -18,7 +24,7 @@ function isIosBrowser(): boolean {
   return iOS && !window.matchMedia('(display-mode: standalone)').matches;
 }
 
-/** Home: shortcuts, offline readiness and (from M4) recent sessions. */
+/** Home: shortcuts, offline readiness and recent sessions. */
 export function HomePage() {
   const me = useMe();
   const [offline, setOffline] = useState<OfflineState>({ kind: 'unknown' });
@@ -84,10 +90,40 @@ export function HomePage() {
 
       {isIosBrowser() ? <p className={ui.notice}>{strings.home.installIos}</p> : null}
 
-      <section aria-labelledby="recent-title">
-        <h2 id="recent-title">{strings.home.recentSessions}</h2>
-        <EmptyState title={strings.home.noSessions} />
-      </section>
+      <RecentSessions />
     </div>
+  );
+}
+
+function RecentSessions() {
+  const sessions = useSessions();
+  const recent = (sessions.data ?? []).slice(0, RECENT_SESSIONS);
+  return (
+    <section className={sessionStyles.section} aria-labelledby="recent-title">
+      <div className={sessionStyles.toolbar}>
+        <h2 id="recent-title">{strings.home.recentSessions}</h2>
+        <Link to="/sessions/new" className={`${ui.button} ${ui.quiet}`}>
+          {strings.sessions.new}
+        </Link>
+      </div>
+      {sessions.isPending ? (
+        <LoadingState />
+      ) : recent.length === 0 ? (
+        <EmptyState title={strings.home.noSessions} />
+      ) : (
+        <ul className={sessionStyles.list}>
+          {recent.map((s) => (
+            <li key={s.id}>
+              <Link to={`/sessions/${s.id}`} className={sessionStyles.row}>
+                <span className={sessionStyles.name}>{formatDisplayDate(s.sessionDate)}</span>
+                <span className={sessionStyles.meta}>
+                  {strings.sessions.details(strings.sessions.modes[s.mode], s.place)}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
