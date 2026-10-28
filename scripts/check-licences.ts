@@ -9,7 +9,7 @@ const ALLOWED = new Set(['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', '0
 
 /** Reviewed production dependencies whose licence expression is outside the allowlist. */
 const EXCEPTIONS: Record<string, string> = {
-  pako: 'MIT AND Zlib. The zlib licence is a short permissive licence in the BSD family. Used by jspdf.',
+  pako: 'MIT AND Zlib. Approved by StatEdge on 2026-10-28 (docs/decisions.md, D51). Used by jspdf.',
 };
 
 const COPYLEFT = /\b(A|L)?GPL\b/i;
