@@ -2,11 +2,12 @@ import '../lib/zodSetup';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useState, type ReactNode } from 'react';
 import { Outlet } from 'react-router';
-import { ApiProvider, createQueryClient } from '../lib/apiContext';
+import { ApiProvider, createQueryClient, QUERY_CACHE_MAX_AGE_MS } from '../lib/apiContext';
 import { FakeAuthProvider } from '../lib/auth/fakeAuth';
 import { onSignOut } from '../lib/auth/signOutCleanup';
 import { createMsal, MsalAuthProvider } from '../lib/auth/msalAuth';
 import { config } from '../lib/config';
+import { clearLocalData } from '../lib/local/cleanup';
 import { OutboxProvider } from '../lib/outbox/OutboxProvider';
 import { idbPersister, PERSISTED_QUERY_KEYS } from '../lib/queryPersister';
 import { CapabilityNotice } from './CapabilityNotice';
@@ -39,6 +40,7 @@ export function AppRoot() {
       client.clear();
       await persister.removeClient();
     });
+    onSignOut(clearLocalData);
     return client;
   });
   return (
@@ -48,7 +50,7 @@ export function AppRoot() {
           client={queryClient}
           persistOptions={{
             persister,
-            maxAge: 7 * 24 * 60 * 60 * 1000,
+            maxAge: QUERY_CACHE_MAX_AGE_MS,
             buster: 'v1',
             dehydrateOptions: {
               shouldDehydrateQuery: (query) =>

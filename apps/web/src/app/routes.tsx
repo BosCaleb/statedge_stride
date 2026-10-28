@@ -90,6 +90,30 @@ export const routes: RouteObject[] = [
                   Component: (await import('../features/athletes/ConsentPage')).ConsentPage,
                 }),
               },
+              {
+                path: '/sessions/new',
+                lazy: async () => ({
+                  Component: (await import('../features/sessions/SessionFormPage')).SessionFormPage,
+                }),
+              },
+              {
+                path: '/sessions/:id',
+                lazy: async () => ({
+                  Component: (await import('../features/sessions/SessionPage')).SessionPage,
+                }),
+              },
+              {
+                path: '/sessions/:id/edit',
+                lazy: async () => ({
+                  Component: (await import('../features/sessions/SessionFormPage')).SessionFormPage,
+                }),
+              },
+              {
+                path: '/import',
+                lazy: async () => ({
+                  Component: (await import('../features/import/ImportPage')).ImportPage,
+                }),
+              },
             ],
           },
           {

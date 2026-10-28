@@ -12,7 +12,7 @@ export function grayscaleSignature(
   width: number,
   height: number,
   mask: Roi | null = null,
-): Float32Array {
+): Float32Array<ArrayBuffer> {
   const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) throw new Error('2D canvas unavailable');

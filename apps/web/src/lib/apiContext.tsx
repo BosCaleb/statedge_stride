@@ -6,6 +6,11 @@ import { config } from './config';
 
 // The API client for the signed-in coach, and the query client. Queries keep working from the
 // cache while offline (networkMode offlineFirst), so the analysis loop never waits on the API.
+// Unused queries stay in memory as long as the persister keeps them (gcTime), or an offline
+// restart would find them gone.
+
+/** How long the persisted query cache is kept, and so how long unused queries stay. */
+export const QUERY_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const ApiContext = createContext<ApiCall | null>(null);
 
@@ -27,6 +32,7 @@ export function createQueryClient(): QueryClient {
       queries: {
         networkMode: 'offlineFirst',
         staleTime: 30_000,
+        gcTime: QUERY_CACHE_MAX_AGE_MS,
         retry: (failures, error) => error instanceof NetworkError && failures < 3,
       },
       mutations: { networkMode: 'offlineFirst', retry: false },

@@ -8,3 +8,8 @@ configure({ asyncUtilTimeout: 5000 });
 afterEach(() => {
   cleanup();
 });
+
+// jsdom has no canvas: drawing components get no context and draw nothing in unit tests. (The
+// *.node.test.ts files run without a DOM.)
+if (typeof HTMLCanvasElement !== 'undefined')
+  Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', { value: () => null });
