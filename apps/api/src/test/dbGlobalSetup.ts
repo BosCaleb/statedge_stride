@@ -57,7 +57,7 @@ IF SUSER_ID(N'stride_api_test') IS NULL
   const db = await connect(settings.database);
   const dir = fileURLToPath(new URL('../../migrations/', import.meta.url));
   await applyMigrations(db, await loadMigrations(dir));
-  await grantApiUser(db, settings.apiUser, false);
+  await grantApiUser(db, settings.apiUser, { kind: 'login' });
   await db.close();
   project.provide('testDb', settings);
 }

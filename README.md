@@ -18,7 +18,7 @@ A web app for coaches to analyse running technique from phone slow-motion video.
 | `packages/analysis` | Pure TypeScript analysis engine: filters, events, metrics, confidence, gate                          |
 | `fixtures`          | Keypoint fixtures (never video of identifiable people) and tiny synthetic test clips                 |
 | `scripts`           | Staff and developer tools: migrate, create-org, seed, dev, licences, OpenAPI, models                 |
-| `infra`             | Terraform module and environments (to move to `statedge-infra`)                                      |
+| `infra`             | Bicep templates, environment settings and the deploy script                                          |
 
 ## Quick start
 

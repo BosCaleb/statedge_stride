@@ -25,10 +25,10 @@ To try the analysis on a phone against the local dev server, see `docs/spike-rep
 
 ## Entra External ID (one time per environment, by hand)
 
-The Terraform provider does not manage the external tenant. For each of dev and prod:
+The Bicep templates do not manage the external tenant, which has no Azure subscription. For each of dev and prod:
 
 1. Create an External ID external tenant for StatEdge customers. Note its tenant id and its subdomain (`<subdomain>.ciamlogin.com`).
-2. Register the API `stride-api`: expose the scope `access_as_user`, and set `requestedAccessTokenVersion` to 2 in the manifest. Its client id is the token audience (`entra_api_client_id` in Terraform).
+2. Register the API `stride-api`: expose the scope `access_as_user`, and set `requestedAccessTokenVersion` to 2 in the manifest. Its client id is the token audience (`entraApiClientId` in `infra/environments/<env>.bicepparam`).
 3. Register the single-page application `stride-web` with redirect URIs ending in `/auth/callback` for the environment's web origin (and `http://localhost:5173/auth/callback` for dev). Grant it the delegated permission `stride-api/access_as_user`.
 4. Create a sign-up and sign-in user flow with email one-time passcode, and add `stride-web` to it. Social sign-in is optional. Add the `email` optional claim to the tokens of both registrations.
 5. Apply StatEdge branding (logo, navy and orange) to the sign-in pages.
@@ -53,7 +53,7 @@ pnpm create-org --name "Ridge High School" --type school --admin-email head.coac
   --web-origin https://stride.statedge.co.za
 ```
 
-`create-org` prints the first admin's invite link once; send it by WhatsApp or email. Your Entra account needs database access: add your UPN to `sql_staff_users` in the environment's Terraform variables, apply, and deploy once (the deploy grants it).
+`create-org` prints the first admin's invite link once; send it by WhatsApp or email. Your Entra account needs database access: add your UPN and object id (`az ad signed-in-user show --query id`) to `sqlStaffUsers` in `infra/environments/<env>.bicepparam`, run `infra/deploy.sh <env>`, and deploy once (the deploy grants it).
 
 ## Monitoring
 

@@ -24,6 +24,8 @@ export interface DbSettings {
   port?: number;
   /** "entra": managed identity in Azure, Azure CLI credentials for staff scripts and CI. */
   auth: 'entra' | 'sql';
+  /** Entra: the user-assigned managed identity to sign in with, by client id. */
+  clientId?: string;
   /** SQL authentication, local development and tests only. */
   user?: string;
   password?: string;
@@ -44,7 +46,13 @@ export function poolConfig(s: DbSettings): sql.config {
     requestTimeout: 30_000,
   };
   if (s.auth === 'entra') {
-    return { ...base, authentication: { type: 'azure-active-directory-default', options: {} } };
+    return {
+      ...base,
+      authentication: {
+        type: 'azure-active-directory-default',
+        options: s.clientId === undefined ? {} : { clientId: s.clientId },
+      },
+    };
   }
   return { ...base, user: s.user ?? '', password: s.password ?? '' };
 }

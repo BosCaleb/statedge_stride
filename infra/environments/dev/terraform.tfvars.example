@@ -1,9 +1,0 @@
-# Copy to terraform.tfvars (not committed). None of these is a secret.
-subscription_id     = "00000000-0000-0000-0000-000000000000"
-owner               = "founder@statedge.co.za"
-alert_email         = "founder@statedge.co.za"
-budget_start_date   = "2026-11-01T00:00:00Z"
-entra_tenant_id     = "00000000-0000-0000-0000-000000000000" # the External ID tenant
-entra_api_client_id = "00000000-0000-0000-0000-000000000000" # the stride-api app registration
-sql_staff_users     = ["founder@statedge.co.za"]
-database_created    = false
