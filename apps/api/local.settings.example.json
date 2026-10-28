@@ -1,0 +1,21 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "ENVIRONMENT": "local",
+    "BUILD_VERSION": "local",
+    "SQL_SERVER": "localhost",
+    "SQL_DATABASE": "stride",
+    "SQL_AUTH": "sql",
+    "SQL_USER": "stride_api",
+    "SQL_PASSWORD": "Stride-api-local-1",
+    "ENTRA_TENANT_ID": "00000000-0000-4000-8000-000000000000",
+    "ENTRA_API_AUDIENCE": "00000000-0000-4000-8000-000000000000",
+    "ALLOWED_ORIGINS": "http://localhost:5173,http://localhost:4173",
+    "DEV_FAKE_AUTH": "true"
+  },
+  "Host": {
+    "LocalHttpPort": 7071
+  }
+}

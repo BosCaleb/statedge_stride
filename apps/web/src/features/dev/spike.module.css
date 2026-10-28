@@ -1,0 +1,66 @@
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+  font-family: system-ui, sans-serif;
+  line-height: 1.4;
+}
+
+.note {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.row button,
+.field input {
+  min-height: 48px;
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+  margin: 8px 0;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid #ddd;
+  padding: 4px 6px;
+  text-align: left;
+}
+
+.frame {
+  max-width: 100%;
+  touch-action: none;
+  border: 1px solid #ccc;
+}
+
+.overlay {
+  position: relative;
+}
+
+.overlay video {
+  width: 100%;
+  display: block;
+}
+
+.overlay canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}

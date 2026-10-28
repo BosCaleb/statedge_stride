@@ -1,0 +1,14 @@
+pnpm-lock.yaml
+node_modules/
+dist/
+dist-*/
+coverage/
+apps/api/.deploy/
+apps/api/openapi.json
+apps/web/public/models/
+playwright-report/
+test-results/
+fixtures/**/*.skp1
+docs/spec.md
+infra/**/.terraform/
+fixtures/manifest.json

@@ -1,0 +1,43 @@
+node_modules/
+dist/
+dist-*/
+coverage/
+*.tsbuildinfo
+
+# Local environment overrides. The committed .env.<mode> files hold public values only.
+.env.local
+.env.*.local
+apps/api/local.settings.json
+
+# API deployment package produced by the build
+apps/api/.deploy/
+apps/api/*.zip
+
+# Pose model and WASM files are fetched by `pnpm fetch-models` (pinned and checksummed)
+apps/web/public/models/*
+!apps/web/public/models/README.md
+
+# Test output
+playwright-report/
+test-results/
+blob-report/
+
+# Azurite local storage
+__azurite_db*
+__blobstorage__/
+__queuestorage__/
+.azurite/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Terraform: local state, provider caches and filled-in settings
+infra/**/.terraform/
+infra/**/.terraform.lock.hcl.tmp
+infra/**/*.tfstate
+infra/**/*.tfstate.*
+infra/**/backend.hcl
+infra/**/terraform.tfvars

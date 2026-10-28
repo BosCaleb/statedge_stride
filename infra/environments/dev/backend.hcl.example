@@ -1,0 +1,6 @@
+# Copy to backend.hcl (not committed) and run: terraform init -backend-config=backend.hcl
+resource_group_name  = "rg-statedge-tfstate-san"
+storage_account_name = "ststatedgetfstate"
+container_name       = "tfstate"
+key                  = "stride/dev.tfstate"
+use_azuread_auth     = true

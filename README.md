@@ -1,247 +1,3 @@
-# StatEdge Stride: Web App Technical Specification (MVP)
-
-
-## Purpose and how to use this spec
-
-This document specifies the Stride web app MVP in enough detail for Claude Code to build it in small, testable steps. Stride is a StatEdge Sport product: a coach films an athlete in slow motion on a phone, imports the clip, and gets running-technique metrics and annotated frames computed on the phone. The product background, pricing, capture protocol and bill of materials are in the earlier product spec. This document covers the software only.
-
-### Goals
-
-- A coach can sign in, add an athlete with consent, import a slow-motion clip, calibrate it, analyse it on the device, review the result, add notes and export a PDF, using only a phone browser.
-- Pose analysis runs on the phone. Video is not uploaded by default.
-- Everything runs on Azure, with personal data stored in South Africa North, for a monthly infrastructure cost well under US$20.
-- The analysis code is pure, typed and unit-testable without a browser or a model.
-
-### Non-goals for the MVP
-
-- Athlete or parent portal, billing and payments, native apps, server-side video processing.
-- Front or rear views, 3D reconstruction, injury prediction, any medical claim.
-- Automatic marker detection (the coach taps the markers).
-- Cloud video storage. The data model reserves fields for it, but it is a stretch milestone.
-
-### Principles for the build
-
-1. **Pure logic stays pure.** Filters, event detection, metrics and the quality gate live in a package with no DOM, network or model dependencies, tested on recorded keypoint fixtures.
-2. **The model is replaceable.** All pose estimation sits behind one interface, so MediaPipe can be swapped without touching metrics.
-3. **Never show a number you cannot defend.** Every metric carries a confidence label, and a failed quality gate hides results instead of guessing.
-4. **Consent is enforced in code.** No analysis can be saved to the cloud for an athlete without a valid consent record.
-5. **Local first.** The core loop must work with poor connectivity at a track. Saving to the cloud can wait.
-6. **Boring and cheap.** Prefer free tiers, managed identity over secrets, and a small number of services.
-
-### Assumptions that the spike must confirm
-
-The numbers marked as starting values in this spec (thresholds, filter cutoffs, distances) are expected to change after the week 1 to 2 spike. Keep them in one configuration module with comments, never scattered through the code. The test device is a Samsung Galaxy S23 Ultra recording 1080p slow motion at 240 fps in the native camera app. Safari on iOS is the second target.
-
-### How Claude Code should work from this spec
-
-- Build in the order in the last section, one milestone at a time, and stop at each gate for review.
-- Treat each section as a requirement. Where a value is a starting value, implement it as configuration and note it.
-- Do not add services, libraries or features that are not named here without asking.
-- Write the tests listed in the testing section alongside each feature, not afterwards.
-- When something here is ambiguous or conflicts with reality, raise it as a question with a proposed default. Do not guess silently.
-
-## Architecture
-
-Stride is a single-page, installable web app. The heavy work (decoding, pose estimation, metrics) runs in a worker on the phone, and a small Azure API stores results. There are no servers to patch and no GPU costs.
-
-&#91;embedded content: System architecture: phone, static hosting, sign-in, South Africa North data tier\]
-
-The browser calls the API directly with a bearer token. The API reaches the database with a managed identity, so no database secrets exist anywhere.
-
-### Decisions
-
-| Area | Choice | Alternatives considered | Reason |
-| --- | --- | --- | --- |
-| Front end | React 18, TypeScript, Vite, React Router, installable PWA | Next.js, native apps | Matches Tournament Manager. Static hosting on the free plan. No server rendering needed |
-| Pose model | MediaPipe Pose Landmarker (`@mediapipe/tasks-vision`), self-hosted WASM and model files | MoveNet, RTMPose through ONNX Runtime Web | Apache 2.0 licence, 33 landmarks including heel and foot index, GPU delegate in the browser. Hidden behind a `PoseEstimator` interface so it can be swapped |
-| Video decode | WebCodecs with `mp4box.js` for demuxing, `<video>` plus `requestVideoFrameCallback` as fallback | `ffmpeg.wasm` | Exact frame timestamps with low overhead. The fallback covers codecs WebCodecs cannot decode on a given phone |
-| API | Azure Functions, Node.js 20 or later, TypeScript, v4 programming model, Consumption plan, South Africa North | App Service, Container Apps | Free monthly grant and no idle cost. Keeps API processing in South Africa |
-| Database | Azure SQL Database free offer, T-SQL, row-level security | PostgreSQL Flexible Server, Cosmos DB | US$0. Relational data fits the model. See the infrastructure section for the Postgres upgrade path |
-| Database access | `mssql` (tedious driver) with Entra authentication through managed identity | Connection strings and SQL logins | No secrets in code or in GitHub |
-| Sign-in | Microsoft Entra External ID with `@azure/msal-browser` and `@azure/msal-react` | Custom auth, Supabase Auth | Azure-native, free for the first 50,000 monthly active users. Roles live in our database, not in the token |
-| Validation | `zod` schemas in a shared package, used by both the web app and the API | Hand-written checks | One definition of every request and result |
-| State | TanStack Query for server state, Zustand for UI and job state, `idb` for IndexedDB | Redux | Small and typed |
-| Styling | CSS with design tokens (CSS modules), no Tailwind | Tailwind, CSS-in-JS | Same approach as Tournament Manager |
-| PDF | `jspdf` and `jspdf-autotable`, client-side, dynamically imported | Server-side rendering | Already in the StatEdge stack and no server cost |
-| Infrastructure | Terraform in the `statedge-infra` repository, with its own `stride` environment and state file | Bicep, portal clicks | Matches the Azure migration plan |
-
-## Repository, tooling and conventions
-
-Use one pnpm monorepo called `statedge-stride`. The pure analysis code and the shared schemas are separate packages so that they can be tested and reused without the app.
-
-```
-statedge-stride/
-  apps/
-    web/                     React + Vite PWA
-      src/
-        app/                 routes, providers, layout, auth guard
-        features/            athletes, sessions, import, analysis, results,
-                             compare, reports, settings, device-check, guide
-        analysis-runtime/    DOM-bound code: decoder, pose runner, worker glue
-        lib/                 api client, msal, idb, opfs, pdf, config
-        styles/              tokens.css, base.css
-      public/models/         pose model and WASM files (self-hosted)
-    api/                     Azure Functions (Node.js, TypeScript)
-      src/functions/         one file per route group
-      src/lib/               auth, db, rls, errors, audit, validation
-      migrations/            numbered .sql files
-  packages/
-    shared/                  zod schemas, types, constants (API and result schema)
-    analysis/                pure TypeScript: filters, events, metrics, gate, calibration
-  fixtures/                  recorded keypoint files and tiny test clips
-  scripts/                   create-org, seed, fixture tools
-  .github/workflows/         ci.yml, deploy-web.yml, deploy-api.yml
-  CLAUDE.md
-```
-
-### Tooling
-
-| Concern | Choice |
-| --- | --- |
-| Package manager | pnpm workspaces, Node 20 LTS or later, `.nvmrc` committed |
-| Language | TypeScript in strict mode with `noUncheckedIndexedAccess` |
-| Lint and format | ESLint with `typescript-eslint`, Prettier, Stylelint for CSS |
-| Unit tests | Vitest. React Testing Library for components |
-| End-to-end | Playwright (Chromium, plus a mobile viewport project) |
-| Build | Vite for the web app. `tsc` and Azure Functions Core Tools for the API |
-| Commits | Trunk-based with short branches and pull requests. Conventional commit prefixes |
-
-### Coding conventions
-
-- Parse every boundary with zod: API requests and responses, IndexedDB reads, worker messages, and the stored result JSON.
-- Pure functions return values. Expected failures (a bad clip, a missing landmark) are returned as typed results such as `{ ok: false, reason }`. Throw only for programmer errors.
-- All thresholds, cutoffs, distances and weights live in `packages/analysis/src/config.ts`, one exported object with a comment per value.
-- IDs are UUID v4 generated on the client with `crypto.randomUUID()`, which makes writes idempotent.
-- Times are stored in UTC and sent as ISO 8601. Dates shown to users use `dd/MM/yyyy`, as in Tournament Manager.
-- No `any`. No default exports except where a framework requires them. No barrel files that hide dependency direction.
-- Dependency direction: `apps/*` may import from `packages/*`. `packages/analysis` may import only from `packages/shared`. Nothing in `packages/*` may import from `apps/*`.
-- Licences: only MIT, Apache 2.0, BSD or ISC dependencies. No AGPL or GPL code. A CI step lists licences and fails on anything else.
-
-### Environment variables
-
-| Variable | Used by | Purpose |
-| --- | --- | --- |
-| `VITE_API_BASE_URL` | web | Base URL of the Functions API |
-| `VITE_ENTRA_TENANT_SUBDOMAIN` | web | External tenant sign-in host |
-| `VITE_ENTRA_CLIENT_ID` | web | SPA app registration ID |
-| `VITE_API_SCOPE` | web | Scope of the API, for example `access_as_user` |
-| `SQL_SERVER`, `SQL_DATABASE` | api | Azure SQL host and database name |
-| `ENTRA_TENANT_ID`, `ENTRA_API_AUDIENCE` | api | Token validation settings |
-| `ALLOWED_ORIGINS` | api | Comma-separated CORS origins |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | api, web | Telemetry |
-
-None of these is a secret. There are no secrets in the repository or in GitHub: the API uses a managed identity for the database, and deployment uses GitHub OIDC.
-
-## Frontend
-
-The app is designed for a coach standing at a track in bright sun with one hand on a phone. That means large tap targets, high contrast, short flows, and no dependence on a keyboard.
-
-### Routes
-
-| Path | Screen | Auth | Purpose |
-| --- | --- | --- | --- |
-| `/` | Home | Yes | Recent sessions, outbox status, shortcuts to Import and Device check |
-| `/signin`, `/auth/callback` | Sign-in | No | MSAL redirect flow |
-| `/invite/:token` | Accept invite | Sign-in first | Join an organisation |
-| `/athletes` | Athlete list | Yes | Search, add, consent status badge |
-| `/athletes/new` | New athlete | Yes | Name, birth year, then consent step |
-| `/athletes/:id` | Athlete profile | Yes | History, trends, consent, notes |
-| `/athletes/:id/consent` | Record consent | Yes | Capture consent for analysis, clip storage and sharing |
-| `/sessions/new` | New session | Yes | Pick athletes, mode, place, surface, footwear |
-| `/sessions/:id` | Session | Yes | Clips and analyses in this session |
-| `/import` | Import clips | Yes | Choose files, pick athlete and role (calibration or run) |
-| `/analyse/:clipId` | Analyse | Yes | Calibrate, select athlete box, run, watch progress |
-| `/analyses/:id` | Result viewer | Yes | Overlay video, events, metrics, notes |
-| `/compare` | Before and after | Yes | Two analyses side by side, from query parameters |
-| `/reports/:id` | Report builder | Yes | Choose frames and notes, export PDF, share link |
-| `/device-check` | Device check | Yes | Verify a phone and its slow-motion mode |
-| `/guide` | Capture guide | No | Setup checklist and run sheet, cached for offline |
-| `/settings` | Settings | Admin | Organisation, members, invites, retention |
-| `/r/:token` | Shared report | No | Public read-only report |
-
-All routes except the public ones are lazy-loaded. Guard authenticated routes with a `RequireAuth` wrapper that also checks the organisation role from `/v1/me`.
-
-### Key screens
-
-**Import and calibrate.** The coach picks one calibration clip and one or more run clips from the phone. The app reads and shows the real frame rate, resolution, duration and codec for each. It shows the first frame of the calibration clip and asks the coach to tap marker 1 and marker 2, then confirm the real distance (default 5.00 m, editable). It shows the resulting scale and a pixel-length sanity warning if the two taps are very close. Then the coach drags a box around the athlete on a frame from each run clip. The box seeds the region-of-interest tracking.
-
-**Analysis progress.** A full-screen job view with stage names (Reading video, Finding the athlete, Detecting steps, Calculating), a progress bar by frame, elapsed time, and a Cancel button. Keep the screen awake with the Screen Wake Lock API where available. If the tab is hidden, pause and resume with a clear message. On completion go to the result viewer, or show the quality gate failure with reasons and tips.
-
-**Result viewer.** The main screen. Contents from top to bottom:
-
-1. A canvas playing the clip with the skeleton drawn over it. Frame step buttons, slow-motion speeds (1/8, 1/4, 1/2, 1x), and keyboard arrows on desktop.
-2. An event timeline under the video with markers for initial contact and toe-off, left and right in different colours. Tapping a marker jumps to that frame.
-3. Angle read-outs for the current frame (knee, hip, shin, trunk lean).
-4. Three auto-selected key frames (initial contact, mid-stance, toe-off) as tappable thumbnails.
-5. Metric cards in two groups, higher confidence first. Each card shows the value, unit, left and right where relevant, a confidence badge and a one-line plain-language explanation.
-6. A gate banner when the result passed with conditions, listing which metrics are hidden and why.
-7. Coach notes, a Save button (disabled with an explanation if consent is missing), and a Report button.
-
-**Compare.** Two analyses side by side with playback synchronised on the first initial contact of each. A table of metrics with the difference and the direction of change. A trend chart (Recharts) for any one metric across all of the athlete's sessions.
-
-**Device check.** Pick a test clip. Show the detected frame rate, resolution, codec, timestamp regularity and duration. Show Pass, Conditional or Fail with the reason, and send the result with the phone model (from the user agent and a coach-entered model name) to the device-check endpoint.
-
-### Components to build
-
-`AppShell`, `BottomNav` (Home, Athletes, Guide, Settings), `OutboxPill` (saving, saved, offline, with a count, modelled on the Tournament Manager sync pill), `ClipPicker`, `ClipInfoCard`, `FrameCanvas`, `CalibrationOverlay`, `RoiSelector`, `SkeletonOverlay`, `EventTimeline`, `FrameScrubber`, `MetricCard`, `ConfidenceBadge`, `GateBanner`, `ConsentForm`, `ConsentBadge`, `JobProgress`, `EmptyState`, `ErrorState`, `ConfirmDialog`. Each has a story-style test page under `features/dev` that is excluded from production builds.
-
-### State
-
-| State | Home | Notes |
-| --- | --- | --- |
-| Server data | TanStack Query | Keys such as `['athletes']`, `['athlete', id]`, `['analysis', id]`. Mutations go through the outbox when offline |
-| Analysis job | Zustand `jobStore` | Stage, progress, cancel token, result in memory. Not persisted until saved |
-| Session and UI | Zustand `uiStore` | Selected athlete, active session, preferences |
-| Offline writes | IndexedDB outbox | See the offline section |
-| Auth | MSAL React context | Account and token acquisition |
-
-### Design tokens
-
-Stride sits under StatEdge Sport, which leads with orange. Put all values in `styles/tokens.css` as CSS custom properties, with a dark theme through `prefers-color-scheme` and a manual toggle.
-
-| Token | Value | Use |
-| --- | --- | --- |
-| `--color-navy` | `#0D1C3E` | Backgrounds in dark mode, headings in light mode |
-| `--color-orange` | `#F47820` | Primary actions, active states, left-foot markers can use the blue instead |
-| `--color-blue` | `#1E4F8C` | Secondary actions, right-foot markers |
-| Display font | Oswald | Headings and big numbers |
-| Body font | Inter | Text and tables |
-| Tap target | 48 px minimum | All buttons and list rows |
-| Contrast | WCAG AA minimum, AAA for metric values | Readable in direct sun |
-
-### Quality and accessibility rules
-
-- Mobile first, designed at 360 px width, tested up to desktop. Landscape is supported on the result viewer.
-- Every interactive element has an accessible name. Respect `prefers-reduced-motion`.
-- Colour is never the only signal. Confidence badges have text, and left and right are labelled.
-- All user-facing strings go through one `strings.ts` dictionary so that Afrikaans can be added later without a refactor.
-- Every list and screen defines loading, empty and error states.
-
-## Client analysis engine
-
-The engine turns an imported clip into an `AnalysisResult` entirely on the phone. It is split into DOM-bound runtime code (decode, pose, worker glue) and pure code (clean, events, metrics, gate) so that everything after the pose step is testable on recorded keypoints.
-
-&#91;embedded content: Analysis job pipeline: six stages in one worker\]
-
-### Modules
-
-| Module | Location | Needs DOM | Responsibility |
-| --- | --- | --- | --- |
-| `decoder.ts`, `fallbackDecoder.ts` | `analysis-runtime` | Yes | Demux and decode frames with timestamps. WebCodecs with `mp4box.js`, or `<video>` with `requestVideoFrameCallback` |
-| `poseEstimator.ts` | `analysis-runtime` | Yes | The `PoseEstimator` interface |
-| `mediapipeEstimator.ts` | `analysis-runtime` | Yes | MediaPipe Pose Landmarker implementation |
-| `roi.ts` | `analysis-runtime` | Yes | Athlete box tracking and crop geometry |
-| `jobRunner.ts`, `worker.ts`, `messages.ts` | `analysis-runtime` | Yes | Orchestration, cancellation, typed messages |
-| `gaps.ts`, `filters.ts`, `orientation.ts` | `packages/analysis` | No | Gap filling, spike removal, low-pass filtering, facing direction |
-| `events.ts` | `packages/analysis` | No | Stance detection and cross-check |
-| `metrics.ts`, `confidence.ts` | `packages/analysis` | No | Metric formulas and confidence labels |
-| `calibration.ts`, `gate.ts` | `packages/analysis` | No | Scale from marker taps, quality checks |
-| `config.ts`, `types.ts` | `packages/analysis` | No | Tunable values and shared types |
-
-### Core types
-
-Landmark order follows MediaPipe Pose: 0 nose, 11 and 12 shoulders, 13 and 14 elbows, 15 and 16 wrists, 23 and 24 hips, 25 and 26 knees, 27 and 28 ankles, 29 and 30 heels, 31 and 32 foot index (left then right in each pair).
-
 ```ts
 export type Side = 'left' | 'right';
 export type Confidence = 'high' | 'medium' | 'low' | 'unavailable';
@@ -1476,3 +1232,52 @@ pnpm dev | pnpm test | pnpm lint | pnpm typecheck | pnpm db:migrate | pnpm seed
 | iOS storage eviction and missing background sync | M6 iOS pass |
 | Entra External ID setup or billing surprises | M1 sign-in task, first invoice check |
 | Free database allowance too small | Alerts from M1, upgrade path in the infrastructure section |
+=======
+# StatEdge Stride
+
+A web app for coaches to analyse running technique from phone slow-motion video. The analysis (decoding, pose estimation, events, metrics) runs on the phone; a small Azure API stores results. Video stays on the device by default.
+
+- Specification: [docs/spec.md](docs/spec.md)
+- Where the build differs from or adds to it: [docs/decisions.md](docs/decisions.md)
+- Spike measurements (M0): [docs/spike-report.md](docs/spike-report.md)
+- Setting up, deploying and operating: [docs/runbook.md](docs/runbook.md)
+- Infrastructure: [infra/README.md](infra/README.md)
+
+## Layout
+
+| Path                | What                                                                                                 |
+| ------------------- | ---------------------------------------------------------------------------------------------------- |
+| `apps/web`          | React 18 + Vite installable PWA. `src/analysis-runtime` holds the decoder, pose estimator and worker |
+| `apps/api`          | Azure Functions (Node 22, v4 model). `migrations/` holds the numbered SQL files                      |
+| `packages/shared`   | zod schemas: API contract, analysis result, report snapshot, enums                                   |
+| `packages/analysis` | Pure TypeScript analysis engine: filters, events, metrics, confidence, gate                          |
+| `fixtures`          | Keypoint fixtures (never video of identifiable people) and tiny synthetic test clips                 |
+| `scripts`           | Staff and developer tools: migrate, create-org, seed, dev, licences, OpenAPI, models                 |
+| `infra`             | Terraform module and environments (to move to `statedge-infra`)                                      |
+
+## Quick start
+
+```sh
+pnpm install
+pnpm db:up && pnpm db:migrate && pnpm seed
+pnpm fetch-models
+pnpm dev
+```
+
+Then open http://localhost:5173 and sign in as one of the seeded people.
+
+## Commands
+
+| Command                                      | Does                                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------------- |
+| `pnpm dev`                                   | Web, API and (with Core Tools) Azurite                                          |
+| `pnpm test`                                  | Unit, fixture and contract tests                                                |
+| `pnpm test:db`                               | API tests against SQL Server in Docker                                          |
+| `pnpm e2e`                                   | Playwright smoke tests (build first with `pnpm --filter @stride/web build:e2e`) |
+| `pnpm lint`, `pnpm typecheck`                | ESLint, Prettier, Stylelint; TypeScript                                         |
+| `pnpm db:up`, `pnpm db:migrate`, `pnpm seed` | Local database                                                                  |
+| `pnpm create-org`                            | Create an organisation and its first admin invite                               |
+| `pnpm licences`                              | Licence allowlist check                                                         |
+| `pnpm openapi`                               | Regenerate `apps/api/openapi.json`                                              |
+| `pnpm fetch-models`                          | Download the pinned pose model and WASM runtime                                 |
+>>>>>>> dev

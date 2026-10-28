@@ -1,0 +1,207 @@
+/* App shell: header with the wordmark, sync pill and account menu, the page, the bottom nav. */
+
+.shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+}
+
+.skip {
+  position: absolute;
+  top: -100px;
+  left: var(--space-3);
+  z-index: 10;
+  padding: var(--space-3);
+  background: var(--surface-raised);
+}
+
+.skip:focus {
+  top: var(--space-3);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+  padding-top: max(var(--space-2), env(safe-area-inset-top));
+  border-bottom: 3px solid var(--color-orange);
+  background: var(--color-navy);
+  color: var(--color-white);
+}
+
+.wordmark {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  color: var(--color-white);
+  font-family: var(--font-display);
+  font-size: var(--text-large);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.wordmark span {
+  color: var(--color-orange);
+}
+
+.headerEnd {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.main {
+  width: 100%;
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: var(--space-4);
+  padding-bottom: calc(var(--nav-height) + var(--space-5));
+}
+
+.bottomNav {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  border-top: 1px solid var(--border);
+  background: var(--surface-raised);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottomNav ul {
+  display: flex;
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.bottomNav li {
+  flex: 1;
+}
+
+.bottomNav a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--nav-height);
+  color: var(--text-muted);
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bottomNav a.active {
+  color: var(--text);
+  box-shadow: inset 0 3px 0 var(--color-orange);
+}
+
+.pill {
+  border: 0;
+  cursor: pointer;
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: 999px;
+  font-size: var(--text-small);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.saved {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+}
+
+.saving {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.offline {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.attention {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.account {
+  position: relative;
+}
+
+.account > button {
+  border-color: rgb(255 255 255 / 40%);
+  color: var(--color-white);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  display: grid;
+  gap: var(--space-3);
+  width: min(86vw, 300px);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 25%);
+}
+
+.menuName {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.themes {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.themes legend {
+  margin-bottom: var(--space-1);
+  font-weight: 600;
+}
+
+.themes label {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: 40px;
+}
+
+.page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.bare {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.bareCard {
+  width: min(100%, 420px);
+}
