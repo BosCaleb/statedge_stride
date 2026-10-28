@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { RouteName } from '@stride/shared/api/routes';
 import { CoachDirectory } from '../lib/auth';
+import { RateLimiter } from '../lib/rateLimit';
 import { createServices, setServices } from '../lib/services';
 import { callRoute, testConfig, testSigner, type CallInit, type CallResult } from './api';
 import { adminDatabase, apiDatabase, createTestOrg, type TestOrg } from './db';
@@ -33,6 +34,8 @@ export async function harness(now: () => Date = () => new Date()): Promise<Harne
       db: api,
       verifier: signer.verifier,
       coaches: new CoachDirectory(api),
+      // Rate limits have their own tests; a test file makes far more calls than a coach would.
+      coachLimit: new RateLimiter(100_000),
       now,
     }),
   );
