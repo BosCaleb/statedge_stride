@@ -138,6 +138,12 @@ export const routes: RouteObject[] = [
                 }),
               },
               {
+                path: '/compare',
+                lazy: async () => ({
+                  Component: (await import('../features/compare/ComparePage')).ComparePage,
+                }),
+              },
+              {
                 path: '/device-check',
                 lazy: async () => ({
                   Component: (await import('../features/device/DeviceCheckPage')).DeviceCheckPage,

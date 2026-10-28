@@ -84,6 +84,9 @@ test.describe('import and calibrate', () => {
 });
 
 test.describe('analyse', () => {
+  // The analysis alone takes about 20 seconds.
+  test.describe.configure({ timeout: 60_000 });
+
   test('runs the analysis on the phone and keeps the result', async ({ page, api }) => {
     await importAndCalibrate(page, api);
     await page.getByRole('button', { name: /Lerato Molefe/ }).click();

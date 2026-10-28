@@ -44,6 +44,17 @@ export const localClipSchema = z.object({
   irregularShare: finite.nonnegative().nullable(),
   copy: copyLocationSchema,
   importedAt: isoDateTime,
+  /**
+   * What the clip was first saved with. Clip metadata is immutable on the server, so a later
+   * save of another analysis of the clip sends the same.
+   */
+  sent: z
+    .object({
+      calibrationId: idSchema.nullable(),
+      direction: z.union([z.literal(1), z.literal(-1)]).nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 export type LocalClip = z.infer<typeof localClipSchema>;
 
@@ -91,6 +102,8 @@ export const localResultSchema = z.object({
   stats: jobStatsSchema,
   /** The coach's note, kept here until the result is saved. */
   noteDraft: z.string().max(4000),
+  /** The id the note is saved under, once the result is saved. */
+  noteId: idSchema.nullable().optional(),
   createdAt: isoDateTime,
   /** Set once the save has been queued. */
   savedAt: isoDateTime.nullable(),

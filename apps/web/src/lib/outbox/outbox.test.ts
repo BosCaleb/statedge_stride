@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiProblem, NetworkError } from '../api';
-import { backoffMs, memoryStorage, Outbox, type OutboxEntry } from './outbox';
+import { backoffMs, memoryStorage, needsAttention, Outbox, type OutboxEntry } from './outbox';
 
 const problem = (status: number, code: ApiProblem['code']) =>
   new ApiProblem({ type: 'urn:test', title: code, status, code, detail: `${code} detail` });
@@ -81,6 +81,39 @@ describe('outbox', () => {
     expect(waiting).toMatchObject({ label: 'consent', state: 'pending' });
     await outbox.flush();
     expect(sent).toEqual(['session']);
+    // The waiting consent needs attention too: it cannot go until the athlete does.
+    const entries = await outbox.list();
+    expect(entries.map((e) => needsAttention(e, entries))).toEqual([true, true]);
+  });
+
+  it('needs attention only through a failed dependency, however indirect', async () => {
+    const { outbox } = setup((e) => (e.label === 'clip' ? problem(409, 'conflict') : null));
+    const clip = { type: 'clip', id: 'k1' };
+    const analysis = { type: 'analysis', id: 'n1' };
+    await outbox.enqueue({ route: 'putClip', params: { id: 'k1' }, resource: clip, label: 'clip' });
+    await outbox.enqueue({
+      route: 'putAnalysis',
+      params: { id: 'n1' },
+      resource: analysis,
+      needs: [clip],
+      label: 'analysis',
+    });
+    await outbox.enqueue({
+      route: 'putKeypoints',
+      params: { id: 'n1' },
+      needs: [analysis],
+      label: 'keypoints',
+    });
+    await outbox.enqueue({ route: 'putSession', params: { id: 's1' }, label: 'session' });
+    const before = await outbox.list();
+    expect(before.map((e) => needsAttention(e, before))).toEqual([false, false, false, false]);
+    await outbox.flush();
+    const after = await outbox.list();
+    expect(after.map((e) => [e.label, needsAttention(e, after)])).toEqual([
+      ['clip', true],
+      ['analysis', true],
+      ['keypoints', true],
+    ]);
   });
 
   it('retries a failed entry when asked, and discards it when asked', async () => {

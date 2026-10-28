@@ -61,8 +61,13 @@ export async function storeLocalCalibration(queryClient: QueryClient, cal: Local
   await queryClient.invalidateQueries({ queryKey: localKeys.calibrations });
 }
 
+let resultWrites: Promise<unknown> = Promise.resolve();
+
+/** Writes land in the order they were asked for, so a late note draft never undoes a save. */
 export async function storeLocalResult(queryClient: QueryClient, result: LocalResult) {
-  await localResults.put(result);
+  const write = resultWrites.then(() => localResults.put(result));
+  resultWrites = write.catch(() => undefined);
+  await write;
   await queryClient.invalidateQueries({ queryKey: localKeys.results });
 }
 

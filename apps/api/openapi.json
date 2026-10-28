@@ -1392,6 +1392,22 @@
                   "cadenceSpm"
                 ],
                 "additionalProperties": false
+              },
+              "comparison": {
+                "type": "object",
+                "properties": {
+                  "sameScaleShare": {
+                    "type": "number"
+                  },
+                  "sameFrameRateShare": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "sameScaleShare",
+                  "sameFrameRateShare"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
@@ -1406,7 +1422,8 @@
               "confidence",
               "spread",
               "calibration",
-              "gate"
+              "gate",
+              "comparison"
             ],
             "additionalProperties": false
           },
@@ -2667,6 +2684,21 @@
                   "agreementWarnBelow",
                   "cadenceSpm"
                 ]
+              },
+              "comparison": {
+                "type": "object",
+                "properties": {
+                  "sameScaleShare": {
+                    "type": "number"
+                  },
+                  "sameFrameRateShare": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "sameScaleShare",
+                  "sameFrameRateShare"
+                ]
               }
             },
             "required": [
@@ -2681,7 +2713,8 @@
               "confidence",
               "spread",
               "calibration",
-              "gate"
+              "gate",
+              "comparison"
             ]
           },
           "createdAt": {

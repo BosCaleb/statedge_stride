@@ -13,6 +13,7 @@ import {
 import { nearestIndex } from '../analysis-runtime/decoder';
 import { drawSkeleton, type SkeletonStyle } from '../features/results/skeleton';
 import { strings } from '../lib/strings';
+import frames from './frames.module.css';
 import { FrameScrubber } from './FrameScrubber';
 import styles from './player.module.css';
 import ui from './ui.module.css';
@@ -36,6 +37,11 @@ export const SKELETON: SkeletonStyle = {
 export interface FrameCanvasHandle {
   /** Pauses and shows a frame (a zero-based index into the clip's frames). */
   seek(frame: number): void;
+  /** Plays from the frame shown, at a slow-motion speed (for the comparison). */
+  play(speed: number): void;
+  pause(): void;
+  /** The frame shown. */
+  frame(): number;
 }
 
 /** Draws the skeleton of one frame over a box of the given CSS size. */
@@ -68,12 +74,35 @@ export const FrameCanvas = forwardRef<
     keypoints: DecodedKeypoints;
     initialFrame: number;
     onFrame: (frame: number) => void;
+    /** False when another component drives the player (the comparison). */
+    controls?: boolean;
+    /** Names the player when two are on one screen. */
+    label?: string;
+    /** Told when playback starts and stops, for a component that drives the player. */
+    onPlayingChange?: (playing: boolean) => void;
   }
->(function FrameCanvas({ file, keypoints, initialFrame, onFrame }, ref) {
+>(function FrameCanvas(
+  {
+    file,
+    keypoints,
+    initialFrame,
+    onFrame,
+    controls = true,
+    label = strings.results.playerLabel,
+    onPlayingChange,
+  },
+  ref,
+) {
   const keysId = useId();
   const video = useRef<HTMLVideoElement>(null);
   const overlay = useRef<HTMLCanvasElement>(null);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlayingState] = useState(false);
+  const onPlayingRef = useRef(onPlayingChange);
+  onPlayingRef.current = onPlayingChange;
+  const setPlaying = useCallback((value: boolean) => {
+    setPlayingState(value);
+    onPlayingRef.current?.(value);
+  }, []);
   const [speed, setSpeed] = useState<number>(SPEEDS[0]);
   const [frame, setFrame] = useState(initialFrame);
   const url = useMemo(() => URL.createObjectURL(file), [file]);
@@ -127,7 +156,22 @@ export const FrameCanvas = forwardRef<
     },
     [count, timeOf, show],
   );
-  useImperativeHandle(ref, () => ({ seek }), [seek]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      seek,
+      play(rate: number) {
+        const v = video.current;
+        if (!v) return;
+        setSpeed(rate);
+        v.playbackRate = rate;
+        void v.play().catch(() => setPlaying(false));
+      },
+      pause: () => video.current?.pause(),
+      frame: () => Math.max(0, shown.current),
+    }),
+    [seek, setPlaying],
+  );
 
   useEffect(() => {
     const v = video.current;
@@ -187,7 +231,7 @@ export const FrameCanvas = forwardRef<
         style={{ aspectRatio: `${keypoints.header.widthPx} / ${keypoints.header.heightPx}` }}
         tabIndex={0}
         role="group"
-        aria-label={strings.results.playerLabel}
+        aria-label={label}
         aria-describedby={keysId}
         onKeyDown={onKey}
       >
@@ -208,30 +252,38 @@ export const FrameCanvas = forwardRef<
       <p id={keysId} className="visuallyHidden">
         {strings.results.playerKeys}
       </p>
-      <div className={styles.controls}>
-        <button type="button" className={`${ui.button} ${ui.primary}`} onClick={toggle}>
-          {playing ? strings.results.pause : strings.results.play}
-        </button>
-        <div className={styles.speeds} role="group" aria-label={strings.results.speedLabel}>
-          {SPEEDS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              className={`${ui.button} ${speed === s ? ui.secondary : ui.quiet}`}
-              aria-pressed={speed === s}
-              onClick={() => setSpeed(s)}
-            >
-              {strings.results.speed(s)}
+      {controls ? (
+        <>
+          <div className={styles.controls}>
+            <button type="button" className={`${ui.button} ${ui.primary}`} onClick={toggle}>
+              {playing ? strings.results.pause : strings.results.play}
             </button>
-          ))}
-        </div>
-      </div>
-      <FrameScrubber
-        index={frame}
-        count={count}
-        timeSec={(times[frame] ?? first) - first}
-        onChange={seek}
-      />
+            <div className={styles.speeds} role="group" aria-label={strings.results.speedLabel}>
+              {SPEEDS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`${ui.button} ${speed === s ? ui.secondary : ui.quiet}`}
+                  aria-pressed={speed === s}
+                  onClick={() => setSpeed(s)}
+                >
+                  {strings.results.speed(s)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <FrameScrubber
+            index={frame}
+            count={count}
+            timeSec={(times[frame] ?? first) - first}
+            onChange={seek}
+          />
+        </>
+      ) : (
+        <p className={frames.position}>
+          {strings.frames.position(frame + 1, count, ((times[frame] ?? first) - first).toFixed(3))}
+        </p>
+      )}
     </div>
   );
 });
