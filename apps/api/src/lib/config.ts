@@ -19,6 +19,8 @@ const envSchema = z.object({
   SQL_PORT: z.coerce.number().int().min(1).max(65535).default(1433),
   /** "sql" (a SQL login) exists for SQL Server in Docker and is refused outside local. */
   SQL_AUTH: z.enum(['entra', 'sql']).default('entra'),
+  /** The client id of the Function App's user-assigned identity, which signs in to Azure SQL. */
+  SQL_CLIENT_ID: z.guid().optional(),
   SQL_USER: z.string().optional(),
   SQL_PASSWORD: z.string().optional(),
   ENTRA_TENANT_ID: z.guid(),
@@ -80,6 +82,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       database: e.SQL_DATABASE,
       port: e.SQL_PORT,
       auth: e.SQL_AUTH,
+      ...(e.SQL_CLIENT_ID === undefined ? {} : { clientId: e.SQL_CLIENT_ID }),
       ...(e.SQL_USER === undefined ? {} : { user: e.SQL_USER }),
       ...(e.SQL_PASSWORD === undefined ? {} : { password: e.SQL_PASSWORD }),
       trustServerCertificate: local,

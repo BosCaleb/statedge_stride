@@ -1,8 +1,9 @@
 name: CI
 
-# Lint, typecheck, unit and database tests, licence and audit checks, the builds, and Playwright
-# smoke tests against the built web app with a stubbed API. deploy-dev.yml and deploy-prod.yml
-# call this workflow first, so the artefacts that passed are the ones that are deployed.
+# Lint, typecheck, unit and database tests, licence and audit checks, the Bicep templates, the
+# builds, and Playwright smoke tests against the built web app with a stubbed API. deploy-dev.yml
+# and deploy-prod.yml call this workflow first, so the artefacts that passed are the ones that
+# are deployed.
 
 on:
   pull_request:
@@ -47,6 +48,29 @@ jobs:
           name: openapi
           path: apps/api/openapi.json
           if-no-files-found: error
+
+  infra:
+    name: Bicep templates and the deploy script
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build and lint the templates and parameter files (any warning fails)
+        run: |
+          # The runner image has Bicep on the PATH; fall back to the Azure CLI's copy.
+          bicep=bicep
+          if ! command -v bicep > /dev/null; then az bicep install; bicep="$HOME/.azure/bin/bicep"; fi
+          "$bicep" --version
+          status=0
+          for file in infra/main.bicep infra/modules/*.bicep infra/environments/*.bicepparam; do
+            command=build
+            case "$file" in *.bicepparam) command=build-params ;; esac
+            if ! "$bicep" "$command" "$file" --stdout > /dev/null 2> diagnostics.txt; then status=1; fi
+            if [ -s diagnostics.txt ]; then cat diagnostics.txt; status=1; fi
+          done
+          exit $status
+      - name: Check the deploy script
+        run: shellcheck infra/deploy.sh
 
   api-db:
     name: API tests against SQL Server

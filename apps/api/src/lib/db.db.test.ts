@@ -4,7 +4,7 @@ import sql from 'mssql';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { adminDatabase, apiDatabase, createTestOrg, insertAthlete, type TestOrg } from '../test/db';
 import { guid } from './db';
-import { applyMigrations, loadMigrations } from './migrations';
+import { applyMigrations, grantApiUser, loadMigrations } from './migrations';
 
 // Row-level security across two organisations, tested as the API identity.
 
@@ -171,5 +171,57 @@ describe('migrations', () => {
     expect(await applyMigrations(pool, migrations)).toEqual([]);
     const changed = migrations.map((m) => ({ ...m, checksum: '0'.repeat(64) }));
     await expect(applyMigrations(pool, changed)).rejects.toThrow(/changed after it was applied/);
+  });
+});
+
+describe('grants', () => {
+  const API_GRANTS = (name: string) => [
+    `ALTER ROLE db_datareader ADD MEMBER [${name}]`,
+    `ALTER ROLE db_datawriter ADD MEMBER [${name}]`,
+    `GRANT EXECUTE ON SCHEMA::stride TO [${name}]`,
+  ];
+
+  it('creates an Entra user from its id, with the bytes in the order Azure SQL stores them', async () => {
+    const pool = await admin.pool();
+    // Azure SQL keeps an Entra SID as the GUID's bytes in Windows order: the first three groups
+    // little-endian, the rest as written.
+    const statements = await grantApiUser(
+      pool,
+      'id-stride-dev-san-api',
+      { kind: 'entra', id: '00112233-4455-6677-8899-aabbccddeeff' },
+      { dryRun: true },
+    );
+    expect(statements).toEqual([
+      'CREATE USER [id-stride-dev-san-api] WITH SID = 0x33221100554477668899AABBCCDDEEFF, TYPE = E',
+      ...API_GRANTS('id-stride-dev-san-api'),
+    ]);
+  });
+
+  it('looks a name up in Entra only when no id is given, and quotes every name', async () => {
+    const pool = await admin.pool();
+    const statements = await grantApiUser(
+      pool,
+      'odd]name@statedge.co.za',
+      { kind: 'entra', id: null },
+      { dryRun: true },
+    );
+    expect(statements[0]).toBe('CREATE USER [odd]]name@statedge.co.za] FROM EXTERNAL PROVIDER');
+  });
+
+  it('recreates a user whose id no longer matches, and leaves a matching one alone', async () => {
+    const pool = await admin.pool();
+    // The API login exists with a SQL SID, so any Entra id is a mismatch.
+    const replaced = await grantApiUser(
+      pool,
+      'stride_api_test',
+      { kind: 'entra', id: randomUUID() },
+      { dryRun: true },
+    );
+    expect(replaced[0]).toBe('DROP USER [stride_api_test]');
+    expect(replaced[1]).toMatch(
+      /^CREATE USER \[stride_api_test\] WITH SID = 0x[0-9A-F]{32}, TYPE = E$/,
+    );
+    const kept = await grantApiUser(pool, 'stride_api_test', { kind: 'login' }, { dryRun: true });
+    expect(kept).toEqual(API_GRANTS('stride_api_test'));
   });
 });

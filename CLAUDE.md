@@ -13,8 +13,8 @@ Entra External ID, MediaPipe Pose Landmarker, pnpm monorepo.
 
 apps/web, apps/api, packages/shared (zod schemas), packages/analysis (pure TS).
 fixtures/ holds keypoint files (never video of identifiable people). scripts/ holds create-org,
-seed, db-migrate, fetch-models, licence and OpenAPI tools. infra/ holds the Terraform module that
-belongs in the statedge-infra repository.
+seed, db-migrate, fetch-models, licence and OpenAPI tools. infra/ holds the Bicep templates and
+infra/deploy.sh, which deploys an environment and configures its GitHub environment.
 
 ## Commands
 

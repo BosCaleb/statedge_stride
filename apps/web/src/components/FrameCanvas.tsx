@@ -112,6 +112,11 @@ export const FrameCanvas = forwardRef<
   const count = keypoints.frames.length;
   const lastUi = useRef(0);
   const shown = useRef(-1);
+  // Where the player is: the frame last sought to, or reached while playing. It starts at
+  // initialFrame, so that a step taken before the video has loaded counts from there and is kept
+  // once it loads. Frames the video reports while paused (its first frame, as it loads) do not
+  // move it.
+  const current = useRef(initialFrame);
   const onFrameRef = useRef(onFrame);
   onFrameRef.current = onFrame;
 
@@ -131,6 +136,7 @@ export const FrameCanvas = forwardRef<
       const v = video.current;
       const c = overlay.current;
       if (!v || !c) return;
+      if (force || !v.paused) current.current = index;
       if (index !== shown.current || force) {
         shown.current = index;
         paintSkeleton(c, keypoints, index, v.clientWidth, v.clientHeight);
@@ -150,6 +156,7 @@ export const FrameCanvas = forwardRef<
       const v = video.current;
       if (!v) return;
       const target = Math.min(count - 1, Math.max(0, index));
+      current.current = target;
       v.pause();
       v.currentTime = timeOf(target);
       show(target, true);
@@ -168,7 +175,7 @@ export const FrameCanvas = forwardRef<
         void v.play().catch(() => setPlaying(false));
       },
       pause: () => video.current?.pause(),
-      frame: () => Math.max(0, shown.current),
+      frame: () => current.current,
     }),
     [seek, setPlaying],
   );
@@ -242,7 +249,7 @@ export const FrameCanvas = forwardRef<
           muted
           playsInline
           preload="auto"
-          onLoadedData={() => seek(initialFrame)}
+          onLoadedData={() => seek(current.current)}
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onEnded={() => setPlaying(false)}

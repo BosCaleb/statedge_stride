@@ -4,10 +4,11 @@ name: Deploy
 # Signs in to Azure with GitHub OIDC (no stored credentials), runs the migrations, deploys the
 # API, deploys the web app, then checks that the new build is the one answering /v1/health.
 #
-# Environment variables (set by the Terraform module, see infra/README.md): AZURE_CLIENT_ID,
-# AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, RESOURCE_GROUP, FUNCTION_APP_NAME, API_URL, WEB_URL,
-# SQL_SERVER, SQL_DATABASE and optionally SQL_STAFF_USERS. Environment secret:
-# AZURE_STATIC_WEB_APPS_API_TOKEN, the one secret the platform requires.
+# Environment variables (set by infra/deploy.sh from the Bicep outputs, see infra/README.md):
+# AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, RESOURCE_GROUP, FUNCTION_APP_NAME,
+# STATIC_WEB_APP_NAME, API_URL, WEB_URL, SQL_SERVER, SQL_DATABASE, API_IDENTITY_NAME,
+# API_IDENTITY_CLIENT_ID and optionally SQL_STAFF_USERS. No secrets: the Static Web App
+# deployment token is read at deploy time with the same OIDC sign-in.
 
 on:
   workflow_call:
@@ -81,10 +82,12 @@ jobs:
           node-version: 22
       - name: Run database migrations
         env:
-          FUNCTION_APP_NAME: ${{ vars.FUNCTION_APP_NAME }}
+          API_IDENTITY_NAME: ${{ vars.API_IDENTITY_NAME }}
+          API_IDENTITY_CLIENT_ID: ${{ vars.API_IDENTITY_CLIENT_ID }}
           SQL_STAFF_USERS: ${{ vars.SQL_STAFF_USERS }}
         run: |
-          args=(--grant "$FUNCTION_APP_NAME")
+          # Each grant is name=entra-id, so that the database user is created from the id.
+          args=(--grant "$API_IDENTITY_NAME=$API_IDENTITY_CLIENT_ID")
           IFS=',' read -ra staff <<< "$SQL_STAFF_USERS"
           for person in "${staff[@]}"; do [ -n "$person" ] && args+=(--grant "$person"); done
           node migrate/migrate.mjs "${args[@]}"
@@ -93,10 +96,20 @@ jobs:
         with:
           app-name: ${{ vars.FUNCTION_APP_NAME }}
           package: api/api-app.zip
+      - name: Read the Static Web App deployment token
+        env:
+          RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+          STATIC_WEB_APP_NAME: ${{ vars.STATIC_WEB_APP_NAME }}
+        run: |
+          token=$(az staticwebapp secrets list --name "$STATIC_WEB_APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" --query properties.apiKey --output tsv)
+          [ -n "$token" ] || { echo "::error::could not read the token of $STATIC_WEB_APP_NAME"; exit 1; }
+          echo "::add-mask::$token"
+          echo "SWA_DEPLOYMENT_TOKEN=$token" >> "$GITHUB_ENV"
       - name: Deploy the web app
         uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          azure_static_web_apps_api_token: ${{ env.SWA_DEPLOYMENT_TOKEN }}
           action: upload
           app_location: web
           skip_app_build: true

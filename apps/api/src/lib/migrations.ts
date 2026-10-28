@@ -86,27 +86,62 @@ export async function applyMigrations(
   return done;
 }
 
+/** Who gets the API's permissions. */
+export type GrantTarget =
+  /** A SQL login of the same name (SQL Server in Docker). */
+  | { kind: 'login' }
+  /**
+   * An Entra identity. With its id (the client id of a managed identity or app, the object id
+   * of a person) the user is created from that id without asking Entra. By name alone, Azure SQL
+   * looks it up, which needs Directory Readers rights for the server when a service principal
+   * such as the deploy pipeline runs the statement.
+   */
+  | { kind: 'entra'; id: string | null };
+
 /**
  * Grants a database user the API's least-privilege permissions: read, write and execute in the
- * stride schema, never db_owner (members of db_owner can switch row-level security off).
- * `external` creates the user for an Entra identity (the Function App's managed identity).
+ * stride schema, never db_owner (members of db_owner can switch row-level security off). A user
+ * created from an id that no longer matches (the identity was recreated) is dropped and created
+ * again. With `dryRun`, returns the statements instead of running them.
  */
 export async function grantApiUser(
   pool: sql.ConnectionPool,
   name: string,
-  external: boolean,
-): Promise<void> {
-  await pool.request().input('name', sql.NVarChar(128), name).input('external', sql.Bit, external)
-    .query(`IF USER_ID(@name) IS NULL
+  target: GrantTarget,
+  options: { dryRun?: boolean } = {},
+): Promise<string[]> {
+  const result = await pool
+    .request()
+    .input('name', sql.NVarChar(128), name)
+    .input('kind', sql.NVarChar(10), target.kind)
+    .input('id', sql.UniqueIdentifier, target.kind === 'entra' ? target.id : null)
+    .input('run', sql.Bit, !options.dryRun).query<{
+    statement: string;
+  }>(`DECLARE @sid VARBINARY(16) = CONVERT(VARBINARY(16), @id);
+DECLARE @statements TABLE (n INT IDENTITY, statement NVARCHAR(600));
+IF @sid IS NOT NULL AND EXISTS (
+  SELECT 1 FROM sys.database_principals WHERE name = @name AND sid <> @sid)
+  INSERT @statements (statement) VALUES (N'DROP USER ' + QUOTENAME(@name));
+IF USER_ID(@name) IS NULL OR EXISTS (SELECT 1 FROM @statements)
+  INSERT @statements (statement) VALUES (CASE
+    WHEN @kind = N'login' THEN N'CREATE USER ' + QUOTENAME(@name) + N' FOR LOGIN ' + QUOTENAME(@name)
+    WHEN @sid IS NOT NULL
+      THEN N'CREATE USER ' + QUOTENAME(@name) + N' WITH SID = ' + CONVERT(NVARCHAR(34), @sid, 1) + N', TYPE = E'
+    ELSE N'CREATE USER ' + QUOTENAME(@name) + N' FROM EXTERNAL PROVIDER' END);
+INSERT @statements (statement) VALUES
+  (N'ALTER ROLE db_datareader ADD MEMBER ' + QUOTENAME(@name)),
+  (N'ALTER ROLE db_datawriter ADD MEMBER ' + QUOTENAME(@name)),
+  (N'GRANT EXECUTE ON SCHEMA::stride TO ' + QUOTENAME(@name));
+IF @run = 1
 BEGIN
-  DECLARE @create NVARCHAR(400) = CASE WHEN @external = 1
-    THEN N'CREATE USER ' + QUOTENAME(@name) + N' FROM EXTERNAL PROVIDER'
-    ELSE N'CREATE USER ' + QUOTENAME(@name) + N' FOR LOGIN ' + QUOTENAME(@name) END;
-  EXEC sp_executesql @create;
+  DECLARE @n INT = 1, @statement NVARCHAR(600);
+  WHILE @n <= (SELECT MAX(n) FROM @statements)
+  BEGIN
+    SELECT @statement = statement FROM @statements WHERE n = @n;
+    EXEC sp_executesql @statement;
+    SET @n += 1;
+  END;
 END;
-DECLARE @grants NVARCHAR(600) =
-  N'ALTER ROLE db_datareader ADD MEMBER ' + QUOTENAME(@name) + N'; ' +
-  N'ALTER ROLE db_datawriter ADD MEMBER ' + QUOTENAME(@name) + N'; ' +
-  N'GRANT EXECUTE ON SCHEMA::stride TO ' + QUOTENAME(@name) + N';';
-EXEC sp_executesql @grants;`);
+SELECT statement FROM @statements ORDER BY n;`);
+  return result.recordset.map((r) => r.statement);
 }

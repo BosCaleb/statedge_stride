@@ -33,11 +33,3 @@ __queuestorage__/
 .idea/
 .vscode/*
 !.vscode/extensions.json
-
-# Terraform: local state, provider caches and filled-in settings
-infra/**/.terraform/
-infra/**/.terraform.lock.hcl.tmp
-infra/**/*.tfstate
-infra/**/*.tfstate.*
-infra/**/backend.hcl
-infra/**/terraform.tfvars
