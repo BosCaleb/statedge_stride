@@ -1,4 +1,13 @@
-import type { ApiErrorCode, AuditAction } from '@stride/shared/enums';
+import type {
+  ApiErrorCode,
+  AuditAction,
+  BaseReasonCode,
+  Confidence,
+  FailCode,
+  GateCheckId,
+  MetricId,
+  Side,
+} from '@stride/shared/enums';
 
 // Every user-facing string in the web app, in one dictionary, so that Afrikaans can be added as a
 // second dictionary of the same shape without a refactor. Functions build strings with numbers.
@@ -213,6 +222,7 @@ export const en = {
     calibrationLine: (distanceM: string, pxPerM: string) =>
       `${distanceM} m between the markers · ${pxPerM} pixels per metre`,
     calibrationFrame: 'Calibration frame with the two markers',
+    calibrationShort: (distanceM: string, pxPerM: string) => `${distanceM} m · ${pxPerM} px/m`,
     clips: 'Clips on this phone',
     noClips: 'No clips imported on this phone yet.',
     analyses: 'Analyses',
@@ -332,12 +342,290 @@ export const en = {
     skipNote:
       'Without a calibration, step length, stride length, speed and vertical oscillation in centimetres are not measured.',
   },
+  frames: {
+    slider: 'Frame',
+    position: (n: number, total: number, seconds: string) =>
+      `Frame ${n} of ${total} · ${seconds} s`,
+    previous: 'Previous frame',
+    next: 'Next frame',
+    back10: 'Back 10 frames',
+    forward10: 'Forward 10 frames',
+  },
+  analyse: {
+    title: 'Analyse',
+    clipNotFound: 'This clip is not on this phone. Import it again from the session.',
+    athlete: (name: string) => `Athlete: ${name}`,
+    noConsent:
+      'There is no consent for analysis for this athlete. Record it before analysing this run.',
+    needsFileTitle: 'Pick the clip',
+    needsFile:
+      'There is no copy of this clip on this phone. Pick the original file from the gallery to analyse it.',
+    pickOriginal: 'Pick the original clip',
+    wrongFile: 'That is a different file. Pick the clip that was imported.',
+    calibration: 'Calibration',
+    calibrationLabel: 'Scale for this run',
+    noCalibration: 'No calibration',
+    boxStep: 'Box around the athlete',
+    boxHint:
+      'Move to a frame near the start of the pass where the whole athlete is in view, then drag a box around them. The analysis starts from that frame.',
+    boxLabel: 'Frame from the run. Drag to draw a box around the athlete.',
+    boxReadout: (w: number, h: number, x: number, y: number) =>
+      `Box ${w} × ${h} px, from ${x}, ${y}`,
+    boxMissing: 'No box drawn yet.',
+    start: 'Analyse this run',
+    toSession: 'Back to the session',
+    tryAgain: 'Try again',
+    failedTitle: 'The analysis did not finish',
+    gateFailedTitle: 'This clip did not pass the quality checks',
+    gateFailedBody:
+      'No measurements are shown for it and it cannot be saved. The clip stays on this phone, so you can fix the shoot and try again.',
+    alsoNoticed: 'Also noticed',
+  },
+  job: {
+    title: 'Analysing the run',
+    stages: {
+      reading: 'Reading video',
+      finding: 'Finding the athlete',
+      detecting: 'Detecting steps',
+      calculating: 'Calculating',
+    },
+    progressLabel: (stage: string) => `Progress: ${stage}`,
+    elapsed: (time: string) => `Elapsed ${time}`,
+    keepOpen: 'Keep Stride open. The screen stays on while the analysis runs.',
+    paused: 'Paused while Stride was in the background. It continues when you come back.',
+    resumed: 'Resumed. Keep Stride open until the analysis finishes.',
+    cancel: 'Cancel',
+  },
+  jobFailures: {
+    decode_failed: 'The video could not be read on this phone. Import the original file again.',
+    unsupported_codec:
+      'This video format cannot be analysed on this phone. Record in the camera’s standard format.',
+    model_load_failed:
+      'The pose model could not be loaded. Connect to the internet once and tap Prepare for offline on Home.',
+    no_person:
+      'No person was found in the box. Draw it around the athlete on a frame where they are fully in view.',
+    tracking_lost:
+      'The athlete was lost part way through the clip. Draw the box again on a clearer frame.',
+    timing_invalid: 'The timing in this file looks wrong. Check the frame rate chosen on import.',
+    out_of_memory:
+      'The phone ran out of memory or storage. Close other apps or remove copies of old clips, then try again.',
+    cancelled: 'The analysis was cancelled.',
+    unknown: 'The analysis stopped unexpectedly. Try again.',
+  } satisfies Record<FailCode, string>,
+  keyFrames: {
+    caption: (side: Side, kind: 'ic' | 'mid' | 'to') =>
+      `${side === 'left' ? 'Left' : 'Right'} foot, ${kind === 'ic' ? 'initial contact' : kind === 'mid' ? 'mid-stance' : 'toe-off'}`,
+    kinds: { ic: 'Initial contact', mid: 'Mid-stance', to: 'Toe-off' },
+  },
+  metrics: {
+    names: {
+      cadence: 'Cadence',
+      stride_frequency: 'Stride frequency',
+      contact_time: 'Ground contact time',
+      flight_time: 'Flight time',
+      step_length: 'Step length',
+      stride_length: 'Stride length',
+      speed: 'Speed',
+      overstride: 'Foot landing ahead of the hips',
+      shin_angle_ic: 'Shin angle at contact',
+      knee_flexion_ic: 'Knee bend at contact',
+      hip_flexion_ic: 'Hip flexion at contact',
+      trunk_lean: 'Trunk lean',
+      vertical_oscillation: 'Vertical bounce',
+      contact_asymmetry: 'Left and right contact time difference',
+      step_time_asymmetry: 'Left and right step time difference',
+      arm_swing_range: 'Arm swing range',
+      foot_angle_ic: 'Foot angle at contact (experimental)',
+    } satisfies Record<MetricId, string>,
+    descriptions: {
+      cadence: 'Steps per minute, counting both feet.',
+      stride_frequency: 'Strides per second: how often the same foot lands.',
+      contact_time: 'How long each foot stays on the ground, from landing to push-off.',
+      flight_time: 'Time with neither foot on the ground, from push-off to the next landing.',
+      step_length: 'Distance travelled from one foot landing to the other foot landing.',
+      stride_length: 'Distance travelled between two landings of the same foot.',
+      speed: 'Average running speed over the measured steps.',
+      overstride: 'How far ahead of the hips the foot lands, as a share of leg length.',
+      shin_angle_ic:
+        'Angle of the shin from vertical as the foot lands, positive when the ankle is ahead of the knee.',
+      knee_flexion_ic: 'How bent the knee is as the foot lands. 0 is a straight leg.',
+      hip_flexion_ic: 'How far the thigh is ahead of the trunk as the foot lands.',
+      trunk_lean:
+        'Angle of the trunk from vertical during ground contact, positive leaning forward.',
+      vertical_oscillation:
+        'How much the hips rise and fall in each stride, as a share of leg length, and in centimetres with a calibration.',
+      contact_asymmetry:
+        'Difference between left and right ground contact times, as a percentage of their average.',
+      step_time_asymmetry:
+        'Difference between left and right step times, as a percentage of their average.',
+      arm_swing_range: 'Range of the upper-arm swing in each stride.',
+      foot_angle_ic: 'Angle of the foot from horizontal as it lands.',
+    } satisfies Record<MetricId, string>,
+    units: {
+      spm: 'steps/min',
+      Hz: 'Hz',
+      ms: 'ms',
+      m: 'm',
+      'm/s': 'm/s',
+      '%L': '% of leg length',
+      deg: '°',
+      '%': '%',
+      cm: 'cm',
+    },
+    confidence: {
+      high: 'High confidence',
+      medium: 'Medium confidence',
+      low: 'Low confidence',
+      unavailable: 'Not measured',
+    } satisfies Record<Confidence, string>,
+    reasons: {
+      few_cycles: 'Only a few steps were measured.',
+      landmarks_unclear: 'Some body points were unclear in the video.',
+      events_disagree: 'The two ways of finding foot contacts did not always agree.',
+      low_frame_rate: 'The frame rate is low for this measurement.',
+      far_side: 'The far leg was partly hidden.',
+      side_labels_uncertain: 'Left and right could not be told apart with certainty.',
+      timing_sensitive: 'A one- or two-frame error changes this value noticeably.',
+      planar_scale: 'Distances assume the athlete ran along the calibrated line.',
+      least_reliable_landmarks: 'Elbow, heel and toe points are the least reliable.',
+      missing_input: 'Something this needs was not visible.',
+      needs_calibration: 'This needs a calibration.',
+      needs_both_sides: 'This needs steps on both sides.',
+      experimental: 'This is an experimental measurement.',
+    } satisfies Record<BaseReasonCode, string>,
+    reasonsLabel: 'Why the confidence is lower',
+    sides: { left: 'Left', right: 'Right' },
+    spread: (sd: string, unit: string, n: number) => `Spread ± ${sd} ${unit} over ${n}`,
+    spreadHint: 'Tap a value to see its spread from step to step.',
+    showSpread: '(show the spread)',
+    primary: 'Main measurements',
+    secondary: 'More measurements',
+    notMeasured: 'Not measured in this clip',
+  },
+  results: {
+    notFound: 'This result is not on this phone.',
+    title: (name: string) => name,
+    subtitle: (date: string, mode: string) => `${date} · ${mode}`,
+    notSaved: 'Not saved yet. It is kept on this phone.',
+    playerLabel: 'Clip with the skeleton drawn over it',
+    playerKeys:
+      'Left and right arrows step one frame, with Shift ten frames. Space plays and pauses.',
+    play: 'Play',
+    pause: 'Pause',
+    speedLabel: 'Playback speed',
+    speed: (s: number) => (s === 1 ? '1×' : `1/${Math.round(1 / s)}×`),
+    timeline: 'Foot contacts and toe-offs',
+    timelineLegend:
+      'L is the left foot (above), R the right foot (below). Filled: initial contact. Outlined: toe-off.',
+    eventLabel: (side: Side, kind: 'ic' | 'to', frame: number) =>
+      `${side === 'left' ? 'Left' : 'Right'} foot, ${kind === 'ic' ? 'initial contact' : 'toe-off'}, frame ${frame}`,
+    anglesTitle: 'Angles in this frame',
+    angles: {
+      knee: 'Knee bend',
+      hip: 'Hip flexion',
+      shin: 'Shin angle',
+      trunkLean: 'Trunk lean',
+    },
+    angle: (value: string) => `${value}°`,
+    noAngle: '–',
+    keyFramesTitle: 'Key frames',
+    keyFrameButton: (caption: string) => `Show ${caption.toLowerCase()}`,
+    pickOriginalTitle: 'Play the clip',
+    pickOriginal: 'Pick the original clip to play it',
+    pickOriginalHint:
+      'The copy of this clip is not on this phone. The key frames and measurements are still here.',
+    wrongFile: 'That is a different file. Pick the clip that was analysed.',
+    notesTitle: 'Notes',
+    notesLabel: 'Coach notes',
+    notesHint: 'Kept on this phone with the result.',
+    measurementsTitle: 'Measurements',
+    noMetrics: 'No measurements were possible for this clip.',
+  },
   gate: {
     status: {
       pass: 'Passed the quality checks',
       conditional: 'Passed with conditions',
       fail: 'Did not pass the quality checks',
     },
+    measured: (detail: string) => `Measured: ${detail}`,
+    banner: 'Passed with conditions',
+    hidden: (names: string) => `Not measured: ${names}.`,
+    secondaryHidden: (names: string) => `Not measured in centimetres: ${names}.`,
+    lowered: (names: string) => `Lower confidence: ${names}.`,
+    checks: {
+      codec_decodable: {
+        message: 'This video could not be decoded on this phone.',
+        tip: 'Record in the camera’s standard format and import the original file.',
+      },
+      fps_ok: {
+        message: 'This clip was not recorded at a high enough frame rate.',
+        tip: 'Use Slow motion mode and check the screen shows 240.',
+      },
+      timing_regular: {
+        message: 'The frames in this file are unevenly spaced.',
+        tip: 'Import the original file from the camera, not a copy sent through a messaging app.',
+      },
+      resolution_ok: {
+        message: 'The video resolution is low.',
+        tip: 'Record at 1080p (Full HD) in Slow motion.',
+      },
+      duration_ok: {
+        message: 'The clip is very short or very long.',
+        tip: 'Record 2 to 15 seconds: one pass through the zone, not the whole run-up.',
+      },
+      calibration_present: {
+        message: 'There is no calibration for this clip, so distances and speed are not measured.',
+        tip: 'Film a calibration clip with two markers 5 m apart before the runs, and import it with them.',
+      },
+      athlete_selected: {
+        message: 'No athlete was selected.',
+        tip: 'Draw a box around the athlete.',
+      },
+      camera_stable: {
+        message: 'The camera moved.',
+        tip: 'Lock the tripod, then record the calibration clip again.',
+      },
+      person_tracked: {
+        message: 'The athlete could not be followed through the whole clip.',
+        tip: 'Make sure only one person runs through the shot, in good light.',
+      },
+      body_visible: {
+        message: 'Part of the body left the frame.',
+        tip: 'Widen the shot or move the tripod back slightly.',
+      },
+      athlete_size: {
+        message: 'The athlete is too small in the frame.',
+        tip: 'Move the tripod closer.',
+      },
+      feet_visible: {
+        message: 'The feet are hard to see.',
+        tip: 'Film side-on with the camera low, and keep the feet in good light.',
+      },
+      steady_direction: {
+        message: 'The athlete stopped or turned in the clip.',
+        tip: 'Film a pass straight through the zone.',
+      },
+      events_found: {
+        message: 'Too few steps were found.',
+        tip: 'Film at least two full strides: four foot contacts or more.',
+      },
+      events_alternate: {
+        message: 'Left and right steps did not alternate as expected.',
+        tip: 'Film side-on at hip height so that both legs can be seen.',
+      },
+      method_agreement: {
+        message: 'The two ways of finding foot contacts often disagreed.',
+        tip: 'Film side-on and keep the whole foot in view.',
+      },
+      timebase_plausible: {
+        message: 'The timing looks wrong.',
+        tip: 'Check that you used Slow motion and not Super slow-mo, and that you imported the original file.',
+      },
+      side_labels: {
+        message: 'Left and right could not be checked against the direction of running.',
+        tip: 'Film with the near leg clearly visible. Left and right values are shown with lower confidence.',
+      },
+    } satisfies Record<GateCheckId, { message: string; tip: string }>,
   },
   outbox: {
     saved: 'Saved',

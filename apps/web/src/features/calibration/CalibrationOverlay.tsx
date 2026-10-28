@@ -1,15 +1,8 @@
 import type { Point } from '@stride/analysis/types';
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import ui from '../../components/ui.module.css';
 import { strings } from '../../lib/strings';
+import { useFitSize } from '../../lib/useFitSize';
 import {
   markerAt,
   type FrameSize,
@@ -55,37 +48,12 @@ export function CalibrationOverlay({
   const positionsId = useId();
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [size, setSize] = useState({ w: 0, h: 0 });
+  const size = useFitSize(box, frame, MAX_HEIGHT_SHARE);
   const [view, setView] = useState<View>(wholeFrame);
   const [loupe, setLoupe] = useState<Point | null>(null);
   const pointers = useRef(new Map<number, Point>());
   const gesture = useRef<Gesture | null>(null);
   const fit = size.w > 0 ? size.w / frame.width : 1;
-
-  // Fit the frame to the width, and to most of the screen height for portrait clips.
-  useLayoutEffect(() => {
-    const el = box.current;
-    if (!el) return;
-    const measure = () => {
-      const width = el.getBoundingClientRect().width || frame.width;
-      const maxH = window.innerHeight * MAX_HEIGHT_SHARE || frame.height;
-      let w = width;
-      let h = (w * frame.height) / frame.width;
-      if (h > maxH) {
-        h = maxH;
-        w = (h * frame.width) / frame.height;
-      }
-      setSize({ w, h });
-    };
-    measure();
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', measure);
-      return () => window.removeEventListener('resize', measure);
-    }
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [frame.width, frame.height]);
 
   useEffect(() => {
     const c = canvas.current;

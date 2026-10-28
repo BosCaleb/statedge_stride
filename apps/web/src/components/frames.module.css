@@ -1,0 +1,121 @@
+/* Frames: the scrubber, the athlete box and the job progress screen. */
+
+.scrubber {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.range {
+  width: 100%;
+  min-height: var(--tap);
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+}
+
+.position {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.frameBox {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.canvas {
+  display: block;
+  max-width: 100%;
+  border-radius: var(--radius-small);
+  background: var(--color-navy);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.readout {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.job {
+  position: fixed;
+  z-index: 50;
+  display: grid;
+  align-content: center;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  overflow-y: auto;
+  background: var(--bg);
+  inset: 0;
+}
+
+.jobInner {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: var(--content-width);
+  margin: 0 auto;
+}
+
+.stages {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.stageMark {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  font-weight: 600;
+}
+
+.stageCurrent {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.stageCurrent .stageMark {
+  border-color: var(--color-orange);
+}
+
+.stageDone .stageMark {
+  border-color: var(--ok-text);
+  color: var(--ok-text);
+}
+
+.progress {
+  width: 100%;
+  height: 16px;
+  accent-color: var(--color-orange);
+}
+
+.elapsed {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-large);
+  font-variant-numeric: tabular-nums;
+}

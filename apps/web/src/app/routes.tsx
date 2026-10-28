@@ -114,6 +114,18 @@ export const routes: RouteObject[] = [
                   Component: (await import('../features/import/ImportPage')).ImportPage,
                 }),
               },
+              {
+                path: '/analyse/:clipId',
+                lazy: async () => ({
+                  Component: (await import('../features/analyse/AnalysePage')).AnalysePage,
+                }),
+              },
+              {
+                path: '/analyses/:id',
+                lazy: async () => ({
+                  Component: (await import('../features/results/ResultPage')).ResultPage,
+                }),
+              },
             ],
           },
           {
