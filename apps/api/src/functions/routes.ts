@@ -2,3 +2,6 @@
 // this one module so that both see the same set of routes.
 import './health';
 import './me';
+import './org';
+import './invites';
+import './athletes';

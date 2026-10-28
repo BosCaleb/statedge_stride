@@ -165,8 +165,12 @@ export class CoachDirectory implements CoachLookup {
         ),
       );
     }
-    if (this.cache.size > 5_000) this.cache.clear();
-    this.cache.set(oid, { coach, until: this.now() + COACH_CACHE_MS });
+    // Only found coaches are cached: someone who just accepted an invite must not be told
+    // "not enrolled" by an instance that looked them up a moment earlier.
+    if (coach) {
+      if (this.cache.size > 5_000) this.cache.clear();
+      this.cache.set(oid, { coach, until: this.now() + COACH_CACHE_MS });
+    }
     return coach;
   }
 

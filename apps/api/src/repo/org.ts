@@ -2,8 +2,8 @@ import type { organisationSchema } from '@stride/shared/api/org';
 import { orgTypeSchema } from '@stride/shared/enums';
 import sql from 'mssql';
 import { z } from 'zod';
-import { guid, type Db } from './db';
-import { notFound } from './errors';
+import { guid, type Db } from '../lib/db';
+import { notFound } from '../lib/errors';
 
 const rowSchema = z.object({
   id: z.string(),
@@ -38,5 +38,24 @@ export async function loadOrganisation(
       clipRetentionDays: r.clip_retention_days,
     },
     seatsUsed: r.seats_used,
+  };
+}
+
+/** GET /v1/me for a coach, also returned when an invite is accepted. */
+export async function meFor(
+  db: Db,
+  coach: {
+    id: string;
+    orgId: string;
+    email: string;
+    displayName: string | null;
+    role: 'admin' | 'coach';
+  },
+) {
+  const { organisation, seatsUsed } = await loadOrganisation(db, coach.orgId);
+  return {
+    coach: { id: coach.id, email: coach.email, displayName: coach.displayName, role: coach.role },
+    organisation,
+    seatsUsed,
   };
 }

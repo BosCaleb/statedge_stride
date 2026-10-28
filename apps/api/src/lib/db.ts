@@ -54,16 +54,27 @@ function bind(request: sql.Request, params: SqlParams): sql.Request {
   return request;
 }
 
+/**
+ * A transaction holds one connection, which runs one request at a time. Requests are queued, so
+ * that an accidental Promise.all inside withOrg waits its turn instead of wedging the connection.
+ */
 function dbOn(tx: sql.Transaction): Db {
+  let tail: Promise<unknown> = Promise.resolve();
+  const serial = <T>(work: () => Promise<T>): Promise<T> => {
+    const run = tail.then(work, work);
+    tail = run.catch(() => undefined);
+    return run;
+  };
   return {
-    async query<T>(text: string, params: SqlParams = {}): Promise<T[]> {
-      const result = await bind(new sql.Request(tx), params).query<T>(text);
-      return result.recordset ?? [];
-    },
-    async execute(text: string, params: SqlParams = {}): Promise<number> {
-      const result = await bind(new sql.Request(tx), params).query(text);
-      return result.rowsAffected.reduce((a, b) => a + b, 0);
-    },
+    query: <T>(text: string, params: SqlParams = {}) =>
+      serial(async () => (await bind(new sql.Request(tx), params).query<T>(text)).recordset ?? []),
+    execute: (text: string, params: SqlParams = {}) =>
+      serial(async () =>
+        (await bind(new sql.Request(tx), params).query(text)).rowsAffected.reduce(
+          (a, b) => a + b,
+          0,
+        ),
+      ),
   };
 }
 
