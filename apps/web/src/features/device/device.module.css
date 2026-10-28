@@ -1,0 +1,35 @@
+/* The device check. */
+
+.result {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.resultTitle {
+  margin: 0;
+}
+
+.profiles {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.note {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+  font-weight: 400;
+}

@@ -130,6 +130,23 @@ describe('outbox', () => {
     expect(sent).toEqual(['first', 'second']);
   });
 
+  it('sends at once when the connection comes back, without waiting out the backoff', async () => {
+    let offline = true;
+    const { outbox, sent } = setup(() =>
+      offline ? new NetworkError(new TypeError('Failed to fetch')) : null,
+    );
+    await outbox.enqueue({ route: 'putSession', params: { id: 's1' }, label: 'session' });
+    for (let i = 0; i < 5; i++) {
+      await outbox.retry((await outbox.list())[0]?.id ?? '');
+    }
+    expect((await outbox.list())[0]?.nextAttemptAt).toBeGreaterThan(1_000);
+    offline = false;
+    await outbox.flush();
+    expect(sent).toEqual([]);
+    await outbox.flushNow();
+    expect(sent).toEqual(['session']);
+  });
+
   it('pauses on 401 until resumed after sign-in', async () => {
     let signedIn = false;
     const { outbox, sent } = setup(() => (signedIn ? null : problem(401, 'unauthorised')));

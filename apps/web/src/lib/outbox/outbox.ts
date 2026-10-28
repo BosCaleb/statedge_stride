@@ -128,6 +128,18 @@ export class Outbox {
     return this.flushing;
   }
 
+  /**
+   * Sends now, without waiting out the backoff of entries that failed on the network: for when
+   * the connection comes back and for "Sync now". Entries that failed for good stay failed.
+   */
+  async flushNow(): Promise<void> {
+    for (const entry of await this.storage.all()) {
+      if (entry.state === 'pending' && entry.nextAttemptAt > 0)
+        await this.storage.put({ ...entry, nextAttemptAt: 0 });
+    }
+    return this.flush();
+  }
+
   /** After the coach signs in again. */
   resume(): Promise<void> {
     this.paused = false;

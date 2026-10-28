@@ -164,7 +164,11 @@ export default defineConfig(({ mode }) => {
         workbox: {
           // The app shell, fonts, every route chunk (the guide and the offline analysis loop
           // included) and the strings. Not the pose model: it is large and fetched on demand.
-          globPatterns: ['**/*.{js,css,html,woff2,svg,png,webmanifest}'],
+          globPatterns: [
+            '**/*.{js,css,html,woff2,svg,png,webmanifest}',
+            // Test builds: the recorded keypoints stand in for the pose model offline.
+            ...(env.VITE_E2E === 'true' ? ['e2e-fixtures/*.gz'] : []),
+          ],
           globIgnores: ['models/**'],
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
           navigateFallback: '/index.html',

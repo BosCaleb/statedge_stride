@@ -19,6 +19,17 @@ const devRoutes: RouteObject[] = DEV_PAGES
         path: '/dev/spike',
         lazy: async () => ({ Component: (await import('../features/dev/SpikePage')).SpikePage }),
       },
+      {
+        lazy: async () => ({ Component: (await import('./AppShell')).AppShell }),
+        children: [
+          {
+            path: '/dev/gallery',
+            lazy: async () => ({
+              Component: (await import('../features/dev/GalleryPage')).GalleryPage,
+            }),
+          },
+        ],
+      },
     ]
   : [];
 
@@ -124,6 +135,12 @@ export const routes: RouteObject[] = [
                 path: '/analyses/:id',
                 lazy: async () => ({
                   Component: (await import('../features/results/ResultPage')).ResultPage,
+                }),
+              },
+              {
+                path: '/device-check',
+                lazy: async () => ({
+                  Component: (await import('../features/device/DeviceCheckPage')).DeviceCheckPage,
                 }),
               },
             ],

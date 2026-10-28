@@ -32,11 +32,15 @@ export interface AnalyseRequest {
 
 /** Test builds only: replay recorded keypoints instead of running the pose model. */
 export const E2E_POSE_FIXTURE_PREF = 'stride.e2e.poseFixture';
+/** Test builds only: run the real model on the CPU delegate (the nightly real-model check). */
+export const E2E_POSE_DELEGATE_PREF = 'stride.e2e.poseDelegate';
 
 function estimator(): EstimatorSpec {
   if (import.meta.env.VITE_E2E === 'true') {
     const fixture = readPreference(E2E_POSE_FIXTURE_PREF);
     if (fixture) return { kind: 'fixture', url: `/e2e-fixtures/${fixture}` };
+    if (readPreference(E2E_POSE_DELEGATE_PREF) === 'CPU')
+      return { kind: 'mediapipe', variant: 'full', delegate: 'CPU' };
   }
   return { kind: 'mediapipe', variant: 'full', delegate: 'GPU' };
 }

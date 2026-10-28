@@ -1,29 +1,8 @@
-import { fileURLToPath } from 'node:url';
-import type { Locator, Page } from '@playwright/test';
+import { CLIPS, clickFramePixel, CONES, drawAthleteBox, importAndCalibrate } from './capture';
 import { expect, expectAccessible, PEOPLE, signIn, test } from './fixtures';
-import type { StubApi } from './stubApi';
 
-// Import and calibrate (M3): a session, a calibration clip and a run, two marker taps.
-
-export const CLIPS = {
-  calibration: fileURLToPath(
-    new URL('../../../fixtures/clips/synthetic-calibration-240fps.mp4', import.meta.url),
-  ),
-  run: fileURLToPath(new URL('../../../fixtures/clips/synthetic-run-240fps.mp4', import.meta.url)),
-};
-
-/** The cones in the synthetic calibration clip, 5 m apart (scripts/generate-test-clips.ts). */
-export const CONES = [
-  { x: 585, y: 918 },
-  { x: 1335, y: 918 },
-];
-
-/** Clicks a frame pixel of a canvas that shows the whole 1920 by 1080 frame. */
-export async function clickFramePixel(canvas: Locator, p: { x: number; y: number }) {
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error('canvas not visible');
-  await canvas.click({ position: { x: (p.x / 1920) * box.width, y: (p.y / 1080) * box.height } });
-}
+// Import and calibrate, then analyse (M3): a session, a calibration clip and a run, two marker
+// taps, the athlete box, the job and the result viewer.
 
 test.describe('import and calibrate', () => {
   test('a coach creates a session, imports a calibration clip and a run, and calibrates', async ({
@@ -104,54 +83,6 @@ test.describe('import and calibrate', () => {
   });
 });
 
-/** Imports the synthetic calibration clip and run into a new distance session, calibrated. */
-export async function importAndCalibrate(page: Page, api: StubApi): Promise<string> {
-  const athleteId = api.seedAthlete('a', {
-    firstName: 'Lerato',
-    lastName: 'Molefe',
-    birthYear: 2000,
-  });
-  await page.addInitScript(() =>
-    localStorage.setItem('stride.e2e.poseFixture', 'distance-ltr.skp1.gz'),
-  );
-  await signIn(page, PEOPLE.coachA, '/sessions/new');
-  await page.getByRole('radio', { name: /Distance/ }).check();
-  await page.getByRole('checkbox', { name: /Lerato Molefe/ }).check();
-  await page.getByRole('button', { name: 'Create session and import clips' }).click();
-  await page.locator('input[type=file]').setInputFiles([CLIPS.calibration, CLIPS.run]);
-  const calibration = page.getByRole('article', { name: 'synthetic-calibration-240fps.mp4' });
-  await expect(calibration.getByText('240 fps')).toBeVisible();
-  await calibration.getByRole('radio', { name: 'The calibration clip' }).check();
-  await expect(
-    page.getByRole('article', { name: 'synthetic-run-240fps.mp4' }).getByLabel('Athlete'),
-  ).toHaveValue(athleteId);
-  await page.getByRole('button', { name: 'Import', exact: true }).click();
-  const canvas = page.getByLabel(/Calibration frame/);
-  await clickFramePixel(canvas, CONES[0] ?? { x: 0, y: 0 });
-  await clickFramePixel(canvas, CONES[1] ?? { x: 0, y: 0 });
-  await page.getByRole('button', { name: 'Use this calibration' }).click();
-  await expect(page.getByText('2 clips imported.')).toBeVisible();
-  return athleteId;
-}
-
-/** Drags the athlete box on the first frame of the synthetic run (the runner starts on the left). */
-export async function drawAthleteBox(page: Page) {
-  const canvas = page.getByLabel(/Frame from the run/);
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error('frame not visible');
-  const at = (x: number, y: number) => ({
-    x: box.x + (x / 1920) * box.width,
-    y: box.y + (y / 1080) * box.height,
-  });
-  const from = at(90, 540);
-  const to = at(380, 950);
-  await page.mouse.move(from.x, from.y);
-  await page.mouse.down();
-  await page.mouse.move(to.x, to.y, { steps: 5 });
-  await page.mouse.up();
-  await expect(page.getByText(/^Box \d+ × \d+ px/)).toBeVisible();
-}
-
 test.describe('analyse', () => {
   test('runs the analysis on the phone and keeps the result', async ({ page, api }) => {
     await importAndCalibrate(page, api);
@@ -198,5 +129,23 @@ test.describe('analyse', () => {
     // The result is on the session page, and survives a reload.
     await page.reload();
     await expect(page.getByRole('article', { name: 'Cadence' })).toBeVisible();
+  });
+
+  test('a clip that fails the quality gate shows the reasons and fixes, and keeps nothing', async ({
+    page,
+    api,
+  }) => {
+    await importAndCalibrate(page, api, 'body-out-of-frame.skp1.gz');
+    await page.getByRole('button', { name: /Lerato Molefe/ }).click();
+    await drawAthleteBox(page);
+    await page.getByRole('button', { name: 'Analyse this run' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'This clip did not pass the quality checks' }),
+    ).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText('Part of the body left the frame.')).toBeVisible();
+    await expect(page.getByText('Widen the shot or move the tripod back slightly.')).toBeVisible();
+    await expectAccessible(page);
+    await page.getByRole('link', { name: 'Back to the session' }).click();
+    await expect(page.getByRole('heading', { name: 'No analyses yet.' })).toBeVisible();
   });
 });

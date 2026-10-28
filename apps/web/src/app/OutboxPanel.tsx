@@ -116,7 +116,7 @@ export function OutboxPanel({ open, onClose }: { open: boolean; onClose: () => v
         <button
           type="button"
           className={`${ui.button} ${ui.quiet}`}
-          onClick={() => void outbox.flush()}
+          onClick={() => void outbox.flushNow()}
         >
           {strings.outbox.syncNow}
         </button>

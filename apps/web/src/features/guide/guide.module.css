@@ -1,0 +1,41 @@
+/* The capture guide: a checklist per stage and the run sheet. */
+
+.section {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.section h2 {
+  margin: 0;
+}
+
+.checklist {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checklist li {
+  position: relative;
+  padding-left: var(--space-6);
+}
+
+.checklist li::before {
+  position: absolute;
+  top: 0.15em;
+  left: 0;
+  width: 1.1em;
+  height: 1.1em;
+  border: 2px solid var(--color-orange);
+  border-radius: 4px;
+  content: '';
+}
+
+.runSheet {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+}

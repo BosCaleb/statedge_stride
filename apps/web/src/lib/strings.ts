@@ -3,6 +3,7 @@ import type {
   AuditAction,
   BaseReasonCode,
   Confidence,
+  DeviceTier,
   FailCode,
   GateCheckId,
   MetricId,
@@ -541,6 +542,39 @@ export const en = {
     measurementsTitle: 'Measurements',
     noMetrics: 'No measurements were possible for this clip.',
   },
+  device: {
+    title: 'Device check',
+    intro:
+      'Check that this phone films clips Stride can analyse. Film 3 to 5 seconds of anything moving in Slow motion, then pick the clip here.',
+    model: 'Phone model',
+    modelPlaceholder: 'For example, Galaxy S23 Ultra',
+    unknownPhone: 'Phone not recognised',
+    thisPhone: 'this phone',
+    pick: 'Choose a test clip',
+    pickHint: 'A clip filmed on this phone in Slow motion, straight from the gallery.',
+    results: { pass: 'Pass', conditional: 'Conditional', fail: 'Fail' },
+    resultBody: {
+      pass: 'Clips like this one can be analysed.',
+      conditional: 'Clips like this one can be analysed, with the limits listed below.',
+      fail: 'Clips like this one cannot be analysed. See what to change below.',
+    },
+    jitter: (percent: string) => `Frame intervals vary by ${percent}%`,
+    retimed: (fps: number) =>
+      `This file plays slower than it was filmed, so its real frame timing cannot be checked. Stride will use the ${fps} frames per second chosen above.`,
+    record: 'Record this result',
+    recorded: 'Recorded. It is sent when the phone is online.',
+    outboxLabel: (model: string) => `Device check for ${model}`,
+    testedPhones: 'Tested phones',
+    noProfiles: 'The list of tested phones has not been downloaded yet.',
+    phone: 'Phone',
+    tier: 'Tier',
+    slowMotion: 'Slow motion',
+    tiers: {
+      A: 'A: tested, recommended',
+      B: 'B: works, with limits',
+      C: 'C: not recommended',
+    } satisfies Record<DeviceTier, string>,
+  },
   gate: {
     status: {
       pass: 'Passed the quality checks',
@@ -661,7 +695,63 @@ export const en = {
   },
   guide: {
     title: 'Capture guide',
-    intro: 'Set up the camera side-on, still and level, with the whole athlete in frame.',
+    intro:
+      'Film side-on, with the camera still and level and the whole athlete in frame. This guide works offline.',
+    sections: [
+      {
+        title: 'Before the session',
+        items: [
+          'Charge the phone and free some storage: slow-motion clips are large.',
+          'On Wi-Fi, open Stride and tap Prepare for offline on Home.',
+          'Record consent for every athlete you will film.',
+          'Bring a tripod, two cones or markers, and a 5 m tape.',
+          'Run the device check once on each phone you use.',
+        ],
+      },
+      {
+        title: 'Set up the camera',
+        items: [
+          'Put the phone on the tripod side-on to the lane, at about hip height, with the main 1× lens.',
+          'Set the camera to Slow motion at 240 frames per second and 1080p. Not Super slow-mo.',
+          'Frame the zone so the athlete fills at least a quarter of the picture height and the whole body, feet included, stays in view.',
+          'Keep the sun behind or beside the camera, and other people out of the shot.',
+          'Lock the tripod. Do not touch, move or zoom the phone after the calibration clip.',
+        ],
+      },
+      {
+        title: 'Film the calibration clip',
+        items: [
+          'Place two markers on the middle of the lane, 5.00 m apart, measured with the tape.',
+          'Keep them in the middle of the picture, on the line the athletes will run along.',
+          'Record about 3 seconds with nobody in the shot, then take the markers away.',
+          'If the camera moves, film a new calibration clip.',
+        ],
+      },
+      {
+        title: 'Film each run',
+        items: [
+          'Start recording before the athlete enters the picture and stop after they leave.',
+          'One athlete at a time, running straight through the zone at the pace you want to see.',
+          'Keep each clip between 2 and 15 seconds.',
+          'If there is time, film a pass in each direction, so each leg is nearest the camera once.',
+          'Write down the order of the athletes on the run sheet.',
+        ],
+      },
+      {
+        title: 'Afterwards',
+        items: [
+          'Import the original clips from the phone’s gallery, not copies sent through a messaging app: they keep the real frame rate.',
+          'Import the calibration clip together with the runs from the same set-up.',
+        ],
+      },
+    ],
+    runSheetTitle: 'Run sheet',
+    runSheet: [
+      'Calibration clip: markers 5.00 m apart, nobody in the shot.',
+      'Run 1: athlete, direction (left to right or right to left).',
+      'Run 2, and so on: one line per clip, in the order filmed.',
+      'Note anything unusual: a stumble, a gust, a different pair of shoes.',
+    ],
   },
   settings: {
     title: 'Settings',
