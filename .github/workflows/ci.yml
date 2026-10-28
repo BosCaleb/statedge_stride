@@ -57,8 +57,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build and lint the templates and parameter files (any warning fails)
         run: |
-          az bicep install
-          bicep="$HOME/.azure/bin/bicep"
+          # The runner image has Bicep on the PATH; fall back to the Azure CLI's copy.
+          bicep=bicep
+          if ! command -v bicep > /dev/null; then az bicep install; bicep="$HOME/.azure/bin/bicep"; fi
           "$bicep" --version
           status=0
           for file in infra/main.bicep infra/modules/*.bicep infra/environments/*.bicepparam; do
