@@ -1,0 +1,20 @@
+# Local development only. SQL Server 2022 runs the same migrations as Azure SQL.
+# The SA password below is for this throwaway local container and is never used anywhere else.
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${STRIDE_LOCAL_SA_PASSWORD:-Stride-local-dev-1}
+    ports:
+      - '1433:1433'
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          '/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$${MSSQL_SA_PASSWORD}" -Q "SELECT 1" || exit 1',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30

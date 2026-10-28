@@ -11,6 +11,9 @@
       "samplingSettings": {
         "isEnabled": true,
         "excludedTypes": "Request;Exception"
+      },
+      "httpAutoCollectionOptions": {
+        "enableHttpTriggerExtendedInfoCollection": false
       }
     }
   },

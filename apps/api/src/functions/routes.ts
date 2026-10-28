@@ -1,0 +1,4 @@
+// Importing a route module binds its handlers (see lib/http.ts). index.ts and the tests import
+// this one module so that both see the same set of routes.
+import './health';
+import './me';
