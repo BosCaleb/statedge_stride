@@ -21,10 +21,43 @@
       crossorigin
     />
     <title>StatEdge Stride</title>
+    <link rel="stylesheet" href="/src/styles/loader.css" />
+    <link rel="preload" href="/brand/statedge-icon.png" as="image" />
   </head>
   <body>
-    <div id="root"></div>
-    <noscript>StatEdge Stride needs JavaScript.</noscript>
+    <!-- React replaces this with the same loader while the initial route loads. -->
+    <div id="root">
+      <div class="se-loader se-loader--screen" role="status" aria-label="Loading StatEdge Stride">
+        <div class="se-glow" aria-hidden="true"></div>
+        <div class="se-stage" aria-hidden="true">
+          <div class="se-rings">
+            <svg viewBox="0 0 760 760" fill="none">
+              <circle cx="380" cy="380" r="360" pathLength="1"></circle>
+              <circle cx="380" cy="380" r="300" pathLength="1"></circle>
+              <circle cx="380" cy="380" r="240" pathLength="1"></circle>
+            </svg>
+          </div>
+          <div class="se-logo">
+            <img src="/brand/statedge-icon.png" width="530" height="520" alt="" />
+            <div class="se-glint"></div>
+          </div>
+          <div class="se-text">
+            <div class="se-word">STAT<span>EDGE</span></div>
+            <div class="se-line"></div>
+            <div class="se-slogan">SMARTER DATA. SHARPER DECISIONS</div>
+          </div>
+        </div>
+        <p class="se-caption" aria-hidden="true">Loading StatEdge Stride</p>
+      </div>
+    </div>
+    <noscript>
+      <style>
+        #root {
+          display: none;
+        }
+      </style>
+      StatEdge Stride needs JavaScript.
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

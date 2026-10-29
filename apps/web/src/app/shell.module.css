@@ -35,20 +35,12 @@
 }
 
 .wordmark {
-  display: flex;
-  gap: var(--space-2);
-  align-items: baseline;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  min-height: var(--tap);
   color: var(--color-white);
-  font-family: var(--font-display);
-  font-size: var(--text-large);
-  font-weight: 600;
-  letter-spacing: 0.04em;
   text-decoration: none;
-  text-transform: uppercase;
-}
-
-.wordmark span {
-  color: var(--color-orange);
 }
 
 .headerEnd {

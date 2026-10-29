@@ -1,0 +1,114 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+}
+
+.marks {
+  display: block;
+  flex-shrink: 0;
+}
+
+.marks img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.marks .darkInk,
+.marks .lightInk {
+  display: none;
+}
+
+.product {
+  color: var(--color-orange);
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.header {
+  gap: var(--space-2);
+}
+
+.header .marks {
+  width: 34px;
+  height: 34px;
+}
+
+.header .product {
+  font-size: 1.125rem;
+}
+
+.auth {
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: flex-start;
+  width: 100%;
+}
+
+.auth .marks {
+  width: min(100%, 290px);
+  aspect-ratio: 3.1;
+}
+
+.auth .icon {
+  display: none;
+}
+
+.auth .darkInk {
+  display: block;
+}
+
+.auth .product {
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--color-orange);
+  color: var(--heading);
+  font-size: 1rem;
+  letter-spacing: 0.24em;
+}
+
+:global(:root[data-theme='dark']) .auth .darkInk {
+  display: none;
+}
+
+:global(:root[data-theme='dark']) .auth .lightInk {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme='light'])) .auth .darkInk {
+    display: none;
+  }
+
+  :global(:root:not([data-theme='light'])) .auth .lightInk {
+    display: block;
+  }
+}
+
+@media (width >= 640px) {
+  .header {
+    gap: var(--space-3);
+  }
+
+  .header .marks {
+    width: 164px;
+    height: 50px;
+  }
+
+  .header .icon {
+    display: none;
+  }
+
+  .header .lightInk {
+    display: block;
+  }
+
+  .header .product {
+    padding-left: var(--space-3);
+    border-left: 1px solid rgb(255 255 255 / 25%);
+    font-size: 1.25rem;
+  }
+}

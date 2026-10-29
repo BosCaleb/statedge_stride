@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { Brand } from '../../components/Brand';
 import { strings } from '../../lib/strings';
 import styles from './auth.module.css';
 
@@ -8,9 +9,9 @@ export function AuthScreen({ children }: { children: ReactNode }) {
   return (
     <main className={styles.screen}>
       <div className={styles.card}>
-        <p className={styles.brand}>
-          StatEdge <span>Stride</span>
-        </p>
+        <div className={styles.brand}>
+          <Brand variant="auth" />
+        </div>
         {children}
         <p className={styles.footer}>
           <Link to="/guide">{strings.guide.title}</Link> ·{' '}
