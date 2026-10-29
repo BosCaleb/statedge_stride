@@ -6,6 +6,7 @@
   border-radius: 999px;
   font-size: var(--text-small);
   font-weight: 600;
+  letter-spacing: 0.03em;
   white-space: nowrap;
 }
 

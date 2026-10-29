@@ -13,6 +13,11 @@
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
 }
 
 .button:disabled {
@@ -25,15 +30,44 @@
   color: var(--on-primary);
 }
 
+.primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
 .secondary {
   background: var(--secondary);
   color: var(--on-secondary);
 }
 
+.secondary:hover:not(:disabled) {
+  background: var(--secondary-hover);
+  box-shadow: var(--shadow-md);
+}
+
 .quiet {
+  border-width: 1.5px;
   border-color: var(--border);
-  background: transparent;
+  background: var(--surface-raised);
   color: var(--text);
+}
+
+.quiet:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+/* On the navy hero panel. */
+.onDark {
+  border-width: 1.5px;
+  border-color: rgb(255 255 255 / 35%);
+  background: rgb(255 255 255 / 6%);
+  color: var(--color-white);
+}
+
+.onDark:hover:not(:disabled) {
+  border-color: rgb(255 255 255 / 60%);
+  background: rgb(255 255 255 / 14%);
 }
 
 .danger {
@@ -63,6 +97,8 @@
 
 .stateTitle {
   margin: 0;
+  padding: 0;
+  border: 0;
   font-size: var(--text-large);
 }
 
@@ -74,9 +110,35 @@
 
 .notice {
   padding: var(--space-3) var(--space-4);
+  border-left: 3px solid currentcolor;
   border-radius: var(--radius-small);
   background: var(--warning-bg);
   color: var(--warning-text);
+}
+
+/* Tournament Manager's navy panel: the top of a page, with the page title and its actions. */
+.hero {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-light) 100%);
+  color: var(--color-white);
+  box-shadow: var(--shadow-md);
+}
+
+.hero h1 {
+  margin: 0;
+  color: var(--color-white);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--color-orange);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .spinner {

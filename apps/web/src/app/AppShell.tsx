@@ -1,4 +1,5 @@
 import { Link, Outlet } from 'react-router';
+import { StatEdgeMark } from '../components/StatEdgeMark';
 import { useAuth } from '../lib/auth/authContext';
 import { useMe } from '../lib/apiContext';
 import { useClipRetention } from '../lib/local/localQueries';
@@ -21,7 +22,11 @@ export function AppShell() {
       </a>
       <header className={styles.header}>
         <Link to="/" className={styles.wordmark} aria-label={strings.app.name}>
-          StatEdge <span>Stride</span>
+          <StatEdgeMark />
+          <span className={styles.brandText} aria-hidden="true">
+            <span className={styles.brandName}>{strings.app.brandName}</span>
+            <span className={styles.brandSub}>{strings.app.shortName}</span>
+          </span>
         </Link>
         {signedIn ? (
           <div className={styles.headerEnd}>

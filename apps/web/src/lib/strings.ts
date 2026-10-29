@@ -18,6 +18,8 @@ import type {
 export const en = {
   app: {
     name: 'StatEdge Stride',
+    /** The family wordmark in the header, as in Tournament Manager. */
+    brandName: 'StatEdge',
     shortName: 'Stride',
     skipToContent: 'Skip to content',
   },

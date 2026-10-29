@@ -45,15 +45,18 @@ export function HomePage() {
   const name = me.data?.coach.displayName ?? me.data?.coach.email ?? '';
   return (
     <div className={shell.page}>
-      <h1>{name ? strings.home.greeting(name) : strings.home.title}</h1>
-      <div className={styles.shortcuts}>
-        <Link to="/import" className={`${ui.button} ${ui.primary}`}>
-          {strings.home.importClips}
-        </Link>
-        <Link to="/device-check" className={`${ui.button} ${ui.secondary}`}>
-          {strings.home.deviceCheck}
-        </Link>
-      </div>
+      <section className={ui.hero} aria-labelledby="home-title">
+        {me.data ? <p className={ui.eyebrow}>{me.data.organisation.name}</p> : null}
+        <h1 id="home-title">{name ? strings.home.greeting(name) : strings.home.title}</h1>
+        <div className={styles.shortcuts}>
+          <Link to="/import" className={`${ui.button} ${ui.primary}`}>
+            {strings.home.importClips}
+          </Link>
+          <Link to="/device-check" className={`${ui.button} ${ui.onDark}`}>
+            {strings.home.deviceCheck}
+          </Link>
+        </div>
+      </section>
 
       <section className={`${ui.card} ${styles.offline}`} aria-labelledby="offline-title">
         <h2 id="offline-title">{strings.home.prepareOffline}</h2>

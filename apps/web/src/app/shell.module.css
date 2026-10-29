@@ -32,27 +32,46 @@
   border-bottom: 3px solid var(--color-orange);
   background: var(--color-navy);
   color: var(--color-white);
+  box-shadow: var(--shadow-header);
 }
 
+/* The StatEdge lockup, as in Tournament Manager: the mark, the wordmark, and the product as an
+   orange tracked label under it. */
 .wordmark {
   display: flex;
-  gap: var(--space-2);
-  align-items: baseline;
+  flex: none;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: var(--tap);
   color: var(--color-white);
+  text-decoration: none;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brandName {
   font-family: var(--font-display);
   font-size: var(--text-large);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.wordmark span {
+.brandSub {
   color: var(--color-orange);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .headerEnd {
   display: flex;
+  min-width: 0;
   gap: var(--space-2);
   align-items: center;
 }
@@ -102,42 +121,80 @@
 }
 
 .bottomNav a.active {
-  color: var(--text);
+  color: var(--nav-active);
+  font-weight: 700;
   box-shadow: inset 0 3px 0 var(--color-orange);
 }
 
+/* The sync pill sits on the navy header: tinted, uppercase and tracked, as in Tournament
+   Manager. Each state also has its own words and icon. Its words wrap to a second line rather
+   than push the header wider than a small phone. */
 .pill {
-  border: 0;
-  cursor: pointer;
   display: inline-flex;
   gap: var(--space-1);
   align-items: center;
+  min-width: 0;
   min-height: 32px;
-  padding: 0 var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid transparent;
   border-radius: 999px;
-  font-size: var(--text-small);
-  font-weight: 600;
-  white-space: nowrap;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-align: left;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.pill > svg {
+  flex: none;
+}
+
+/* Small phones: a tighter header so the pill keeps to two lines. */
+@media (width <= 380px) {
+  .header {
+    gap: var(--space-2);
+    padding-inline: var(--space-3);
+  }
+
+  .wordmark {
+    gap: var(--space-2);
+  }
+
+  .wordmark svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .pill {
+    padding-inline: var(--space-2);
+  }
 }
 
 .saved {
-  background: var(--ok-bg);
-  color: var(--ok-text);
+  border-color: rgb(22 163 74 / 35%);
+  background: rgb(22 163 74 / 18%);
+  color: #86efac;
 }
 
 .saving {
-  background: var(--surface);
-  color: var(--text);
+  border-color: rgb(37 99 235 / 40%);
+  background: rgb(37 99 235 / 20%);
+  color: #bfdbfe;
 }
 
 .offline {
-  background: var(--warning-bg);
-  color: var(--warning-text);
+  border-color: rgb(217 119 6 / 45%);
+  background: rgb(217 119 6 / 20%);
+  color: #fde68a;
 }
 
 .attention {
-  background: var(--danger-bg);
-  color: var(--danger-text);
+  border-color: rgb(220 38 38 / 45%);
+  background: rgb(220 38 38 / 22%);
+  color: #fecaca;
 }
 
 .account {
@@ -145,8 +202,14 @@
 }
 
 .account > button {
-  border-color: rgb(255 255 255 / 40%);
+  border: 1px solid rgb(255 255 255 / 18%);
+  background: rgb(255 255 255 / 6%);
   color: var(--color-white);
+}
+
+.account > button:hover {
+  border-color: rgb(255 255 255 / 35%);
+  background: rgb(255 255 255 / 14%);
 }
 
 .menu {
@@ -161,7 +224,7 @@
   border-radius: var(--radius);
   background: var(--surface-raised);
   color: var(--text);
-  box-shadow: 0 6px 24px rgb(0 0 0 / 25%);
+  box-shadow: var(--shadow-header);
 }
 
 .menuName {
