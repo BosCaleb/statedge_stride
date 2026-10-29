@@ -1,0 +1,399 @@
+/* stylelint-disable selector-class-pattern -- Global StatEdge classes shared with index.html, not a CSS module. */
+
+/* Adapted from the supplied statedge-loader.js, in the Tournament Manager colours and type.
+   Shared with the pre-JavaScript markup in index.html, so there is no blank screen while the
+   entry bundle loads; that is also why the colours are literal here, as tokens.css loads with
+   the bundle. No minimum display time; removing the loading state removes the animation. */
+@font-face {
+  font-family: Oswald;
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/oswald-latin-var.woff2') format('woff2');
+}
+
+.se-loader {
+  --se-orange: #f47820;
+  --se-blue: #3a70d8;
+
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: 24px;
+  align-content: center;
+  justify-items: center;
+  overflow: hidden;
+  width: 100%;
+  padding: 40px 16px;
+  box-sizing: border-box;
+  color: var(--text, #0d1c3e);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.se-loader--screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+  background: radial-gradient(ellipse at 50% 45%, #1e3570 0%, #0d1c3e 60%, #070e1a 100%);
+  color: #fff;
+}
+
+.se-glow {
+  position: absolute;
+  z-index: -1;
+  width: 120vmin;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(242 138 30 / 12%), transparent 60%);
+  pointer-events: none;
+}
+
+.se-stage {
+  position: relative;
+  container-type: inline-size;
+  width: min(86%, 1040px);
+  aspect-ratio: 1180 / 420;
+}
+
+.se-rings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64.4%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  animation: se-rings-out 0.5s cubic-bezier(0.65, 0, 0.35, 1) 1.05s both;
+}
+
+.se-rings svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: se-spin 1.9s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+.se-rings circle {
+  stroke: var(--se-blue);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: se-draw 0.9s cubic-bezier(0.65, 0, 0.35, 1) 0.15s both;
+}
+
+.se-rings circle:nth-child(2) {
+  stroke: var(--se-orange);
+  stroke-width: 14;
+  animation-delay: 0.35s;
+}
+
+.se-rings circle:nth-child(3) {
+  stroke: currentcolor;
+  stroke-width: 6;
+  animation-delay: 0.55s;
+}
+
+.se-logo {
+  --se-x: 90.5%;
+  --se-y: 0%;
+
+  position: absolute;
+  top: 1%;
+  left: 0;
+  width: 35.6%;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 12px 24px rgb(0 0 0 / 24%));
+  animation: se-logo-reveal 3s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.se-logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.se-glint {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.se-glint::after {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -40%;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 55%), transparent);
+  transform: skewX(-20deg);
+  animation: se-glint 0.9s cubic-bezier(0.65, 0, 0.35, 1) 1.75s both;
+  content: '';
+}
+
+.se-text {
+  position: absolute;
+  top: 50%;
+  left: 40.7%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.35cqw;
+  width: 59.3%;
+  transform: translateY(-50%);
+  animation: se-wipe 0.9s cubic-bezier(0.65, 0, 0.35, 1) 2.5s both;
+}
+
+.se-word {
+  font-family: Oswald, sans-serif;
+  font-size: 9.15cqw;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.se-line {
+  height: max(2px, 0.5cqw);
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--se-orange), var(--se-blue), var(--se-orange));
+  background-size: 200% 100%;
+  transform-origin: left;
+  animation:
+    se-grow 0.8s ease 3.1s both,
+    se-shimmer 1.6s linear 3.9s infinite;
+}
+
+.se-slogan {
+  font-size: 2.1cqw;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: se-rise 0.7s ease 3.5s both;
+}
+
+.se-caption {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.se-loader--screen .se-caption {
+  position: absolute;
+  right: 24px;
+  bottom: max(32px, env(safe-area-inset-bottom));
+  left: 24px;
+  color: #8fa3b8;
+  letter-spacing: 0.08em;
+}
+
+/* Compact, immediately visible variant for route and data waits. */
+.se-loader--page {
+  min-height: min(60dvh, 480px);
+  border: 1px solid var(--border, #c9d1df);
+  border-radius: var(--radius, 12px);
+  background: var(--surface, #f3f5f9);
+}
+
+.se-loader--inline {
+  min-height: 200px;
+}
+
+.se-loader:not(.se-loader--screen) .se-stage {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  width: min(100%, 280px);
+  aspect-ratio: auto;
+}
+
+.se-loader:not(.se-loader--screen) .se-logo {
+  position: relative;
+  top: auto;
+  flex: 0 0 72px;
+  animation: none;
+}
+
+.se-loader:not(.se-loader--screen) .se-rings {
+  left: 36px;
+  width: 94px;
+  opacity: 0.6;
+  animation: none;
+}
+
+.se-loader:not(.se-loader--screen) .se-rings svg {
+  animation: se-spin 3s linear infinite;
+}
+
+.se-loader:not(.se-loader--screen) .se-rings circle {
+  stroke-dasharray: 0.65 0.35;
+  stroke-dashoffset: 0;
+  animation: none;
+}
+
+.se-loader:not(.se-loader--screen) .se-text {
+  position: static;
+  flex: 1;
+  gap: 10px;
+  width: auto;
+  transform: none;
+  animation: none;
+}
+
+.se-loader:not(.se-loader--screen) .se-word {
+  font-size: clamp(18px, 8cqw, 24px);
+}
+
+.se-loader:not(.se-loader--screen) .se-line {
+  height: 2px;
+  animation: se-shimmer 1.6s linear infinite;
+}
+
+.se-loader:not(.se-loader--screen) .se-slogan {
+  display: none;
+}
+
+@media (width <= 600px) {
+  .se-loader--screen .se-stage {
+    width: min(86%, 440px);
+    aspect-ratio: 760 / 820;
+  }
+
+  .se-loader--screen .se-logo {
+    --se-x: 0%;
+    --se-y: 49.5%;
+
+    top: 0;
+    left: 22.4%;
+    width: 55.2%;
+  }
+
+  .se-loader--screen .se-rings {
+    width: 100%;
+  }
+
+  .se-loader--screen .se-text {
+    top: 61%;
+    left: 0;
+    gap: 3cqw;
+    align-items: center;
+    width: 100%;
+    transform: none;
+  }
+
+  .se-loader--screen .se-word {
+    font-size: 14.2cqw;
+  }
+
+  .se-loader--screen .se-line {
+    width: 92%;
+  }
+
+  .se-loader--screen .se-slogan {
+    font-size: 3.25cqw;
+    letter-spacing: 0.1em;
+  }
+}
+
+@keyframes se-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes se-spin {
+  from {
+    transform: rotate(-140deg);
+  }
+
+  to {
+    transform: rotate(220deg);
+  }
+}
+
+@keyframes se-rings-out {
+  to {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes se-logo-reveal {
+  0%,
+  36% {
+    opacity: 0;
+    transform: translate(var(--se-x), var(--se-y)) scale(0.55) rotate(-60deg);
+  }
+
+  62%,
+  73% {
+    opacity: 1;
+    transform: translate(var(--se-x), var(--se-y)) scale(1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes se-glint {
+  to {
+    left: 140%;
+  }
+}
+
+@keyframes se-wipe {
+  from {
+    clip-path: inset(-30px 100% -30px 0);
+  }
+
+  to {
+    clip-path: inset(-30px -30px -30px 0);
+  }
+}
+
+@keyframes se-grow {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes se-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes se-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 0.85;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .se-loader *,
+  .se-loader *::after {
+    animation: none !important;
+  }
+
+  .se-loader .se-rings,
+  .se-loader .se-glint {
+    display: none;
+  }
+}

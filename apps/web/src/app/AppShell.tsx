@@ -1,5 +1,6 @@
-import { Link, Outlet } from 'react-router';
-import { StatEdgeMark } from '../components/StatEdgeMark';
+import { Link, Outlet, useNavigation } from 'react-router';
+import { Brand } from '../components/Brand';
+import { StatEdgeLoader } from '../components/StatEdgeLoader';
 import { useAuth } from '../lib/auth/authContext';
 import { useMe } from '../lib/apiContext';
 import { useClipRetention } from '../lib/local/localQueries';
@@ -12,6 +13,8 @@ import styles from './shell.module.css';
 /** Header, page and bottom navigation for every signed-in screen and the guide. */
 export function AppShell() {
   const auth = useAuth();
+  const navigation = useNavigation();
+  const navigating = navigation.state !== 'idle';
   const signedIn = auth.status === 'signedIn';
   const me = useMe(signedIn);
   useClipRetention(me.data?.organisation.clipRetentionDays);
@@ -22,11 +25,7 @@ export function AppShell() {
       </a>
       <header className={styles.header}>
         <Link to="/" className={styles.wordmark} aria-label={strings.app.name}>
-          <StatEdgeMark />
-          <span className={styles.brandText} aria-hidden="true">
-            <span className={styles.brandName}>{strings.app.brandName}</span>
-            <span className={styles.brandSub}>{strings.app.shortName}</span>
-          </span>
+          <Brand variant="header" />
         </Link>
         {signedIn ? (
           <div className={styles.headerEnd}>
@@ -36,7 +35,11 @@ export function AppShell() {
         ) : null}
       </header>
       <main id="main" className={styles.main} tabIndex={-1}>
-        <Outlet />
+        {navigating ? <StatEdgeLoader variant="page" /> : null}
+        {/* Keep the current screen mounted if navigation is cancelled or superseded. */}
+        <div hidden={navigating}>
+          <Outlet />
+        </div>
       </main>
       {signedIn ? <BottomNav isAdmin={me.data?.coach.role === 'admin'} /> : null}
     </div>
