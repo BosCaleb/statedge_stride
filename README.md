@@ -7,6 +7,8 @@ A web app for coaches to analyse running technique from phone slow-motion video.
 - Spike measurements (M0): [docs/spike-report.md](docs/spike-report.md)
 - Setting up, deploying and operating: [docs/runbook.md](docs/runbook.md)
 - Infrastructure: [infra/README.md](infra/README.md)
+- Deploying on Azure, with estimated costs: [docs/azure-deployment.md](docs/azure-deployment.md)
+- Outstanding and future features: [docs/roadmap.md](docs/roadmap.md)
 
 ## Layout
 
