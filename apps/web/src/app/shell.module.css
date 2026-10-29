@@ -35,38 +35,14 @@
   box-shadow: var(--shadow-header);
 }
 
-/* The StatEdge lockup, as in Tournament Manager: the mark, the wordmark, and the product as an
-   orange tracked label under it. */
+/* The StatEdge lockup links home (components/Brand.tsx). */
 .wordmark {
   display: flex;
   flex: none;
-  gap: var(--space-3);
   align-items: center;
   min-height: var(--tap);
   color: var(--color-white);
   text-decoration: none;
-}
-
-.brandText {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-}
-
-.brandName {
-  font-family: var(--font-display);
-  font-size: var(--text-large);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.brandSub {
-  color: var(--color-orange);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
 }
 
 .headerEnd {
@@ -157,10 +133,6 @@
   .header {
     gap: var(--space-2);
     padding-inline: var(--space-3);
-  }
-
-  .wordmark {
-    gap: var(--space-2);
   }
 
   .wordmark svg {

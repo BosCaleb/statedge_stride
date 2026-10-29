@@ -21,6 +21,9 @@ export const en = {
     /** The family wordmark in the header, as in Tournament Manager. */
     brandName: 'StatEdge',
     shortName: 'Stride',
+    /** The StatEdge strapline under the wordmark on the loading screen. */
+    slogan: 'Smarter data. Sharper decisions',
+    loading: 'Loading StatEdge Stride',
     skipToContent: 'Skip to content',
   },
   nav: {

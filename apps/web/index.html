@@ -21,10 +21,66 @@
       crossorigin
     />
     <title>StatEdge Stride</title>
+    <link rel="stylesheet" href="/src/styles/loader.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <noscript>StatEdge Stride needs JavaScript.</noscript>
+    <!-- The loader before JavaScript runs (components/StatEdgeLoader.tsx; keep the two in step).
+         React replaces it with the same loader while the initial route loads. -->
+    <div id="root">
+      <div class="se-loader se-loader--screen" role="status" aria-label="Loading StatEdge Stride">
+        <div class="se-glow" aria-hidden="true"></div>
+        <div class="se-stage" aria-hidden="true">
+          <div class="se-rings">
+            <svg viewBox="0 0 760 760" fill="none">
+              <circle cx="380" cy="380" r="360" pathLength="1"></circle>
+              <circle cx="380" cy="380" r="300" pathLength="1"></circle>
+              <circle cx="380" cy="380" r="240" pathLength="1"></circle>
+            </svg>
+          </div>
+          <div class="se-logo">
+            <svg width="64" height="64" viewBox="0 0 64 64" focusable="false">
+              <defs>
+                <radialGradient id="boot-outer" cx="45%" cy="30%" r="70%">
+                  <stop offset="0%" stop-color="#3a70d8" />
+                  <stop offset="100%" stop-color="#1a3272" />
+                </radialGradient>
+                <radialGradient id="boot-ring" cx="45%" cy="30%" r="70%">
+                  <stop offset="0%" stop-color="#f89030" />
+                  <stop offset="100%" stop-color="#d96010" />
+                </radialGradient>
+                <radialGradient id="boot-inner" cx="40%" cy="30%" r="70%">
+                  <stop offset="0%" stop-color="#3a70d8" />
+                  <stop offset="100%" stop-color="#162560" />
+                </radialGradient>
+              </defs>
+              <circle cx="32" cy="32" r="31" fill="url(#boot-outer)" />
+              <circle cx="32" cy="32" r="27" fill="#fff" />
+              <circle cx="32" cy="32" r="26" fill="url(#boot-ring)" />
+              <circle cx="32" cy="32" r="21" fill="#2a1408" />
+              <circle cx="32" cy="32" r="19.5" fill="#fff" />
+              <circle cx="32" cy="32" r="18" fill="url(#boot-inner)" />
+              <polygon points="32,15 23,36 41,36" fill="#f47820" />
+              <polygon points="20,36 32,49 44,36 40,36 32,44 24,36" fill="#fff" />
+            </svg>
+            <div class="se-glint"></div>
+          </div>
+          <div class="se-text">
+            <div class="se-word">StatEdge</div>
+            <div class="se-line"></div>
+            <div class="se-slogan">Smarter data. Sharper decisions</div>
+          </div>
+        </div>
+        <p class="se-caption" aria-hidden="true">Loading StatEdge Stride</p>
+      </div>
+    </div>
+    <noscript>
+      <style>
+        #root {
+          display: none;
+        }
+      </style>
+      StatEdge Stride needs JavaScript.
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
