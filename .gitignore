@@ -33,3 +33,4 @@ __queuestorage__/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+.codegraph

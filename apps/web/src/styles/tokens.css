@@ -1,6 +1,8 @@
-/* Design tokens. Stride sits under StatEdge Sport, which leads with orange. Brand values first,
-   then semantic tokens for the light theme, overridden for the dark theme by the system setting
-   or by the manual toggle (data-theme on <html>).
+/* Design tokens. Stride sits under StatEdge Sport, which leads with orange, and shares the
+   StatEdge Tournament Manager look: the same navy and orange, its cool grey page, white cards
+   and blue-grey borders, and its deep navy dark theme. Brand values first, then semantic tokens
+   for the light theme, overridden for the dark theme by the system setting or by the manual
+   toggle (data-theme on <html>).
 
    Contrast (WCAG): navy text on orange is 6.1:1, so primary buttons use navy text. Orange is
    never used for text on white (2.8:1). Metric values use the strongest text colour (AAA). */
@@ -8,7 +10,10 @@
 :root {
   /* Brand colours */
   --color-navy: #0d1c3e;
+  --color-navy-mid: #162650;
+  --color-navy-light: #1e3570;
   --color-orange: #f47820;
+  --color-orange-hover: #d96510;
   --color-blue: #1e4f8c;
   --color-white: #fff;
 
@@ -39,18 +44,21 @@
   --color-left: var(--color-orange);
   --color-right: var(--color-blue);
 
-  /* Light theme */
-  --bg: #fff;
-  --surface: #f3f5f9;
+  /* Light theme (Tournament Manager's neutrals) */
+  --bg: #f0f4f8;
+  --surface: #e4eaf1;
   --surface-raised: #fff;
   --text: #0d1c3e;
-  --text-muted: #3f4b63;
-  --border: #c9d1df;
+  --text-muted: #4a6080;
+  --border: #d1dbe8;
+  --border-strong: #a8becc;
   --heading: var(--color-navy);
   --link: var(--color-blue);
   --primary: var(--color-orange);
+  --primary-hover: var(--color-orange-hover);
   --on-primary: var(--color-navy);
-  --secondary: var(--color-blue);
+  --secondary: var(--color-navy);
+  --secondary-hover: var(--color-navy-light);
   --on-secondary: var(--color-white);
   --focus: #0b5fff;
   --warning-bg: #fff4d6;
@@ -59,55 +67,75 @@
   --danger-text: #8a1c1c;
   --ok-bg: #e5f5ea;
   --ok-text: #12552b;
-  --shadow: 0 1px 3px rgb(13 28 62 / 15%);
+
+  /* Accent bars: orange beside section headings, navy beside metric cards (orange and blue
+     bars inside a card mean the left and right foot). */
+  --accent-bar: var(--color-orange);
+  --card-bar: var(--color-navy);
+  --nav-active: var(--color-navy);
+  --shadow: 0 1px 3px rgb(13 28 62 / 10%), 0 1px 2px rgb(13 28 62 / 6%);
+  --shadow-md: 0 4px 6px rgb(13 28 62 / 7%), 0 2px 4px rgb(13 28 62 / 5%);
+  --shadow-header: 0 10px 15px rgb(13 28 62 / 10%), 0 4px 6px rgb(13 28 62 / 5%);
 
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #0d1c3e;
-    --surface: #142a57;
-    --surface-raised: #1a3366;
-    --text: #f5f7fb;
-    --text-muted: #c3cbdb;
-    --border: #2e4a80;
+    --bg: #070e1a;
+    --surface: #142743;
+    --surface-raised: #0f1f38;
+    --text: #edf2f7;
+    --text-muted: #8fa3b8;
+    --border: #1e3456;
+    --border-strong: #2a4a78;
     --heading: var(--color-white);
     --link: #9cc1f5;
-    --secondary: #9cc1f5;
-    --on-secondary: var(--color-navy);
+    --secondary: var(--color-navy-light);
+    --secondary-hover: #2a4a8c;
+    --on-secondary: var(--color-white);
     --focus: #8fb8ff;
-    --warning-bg: #4a3500;
+    --warning-bg: #3a2a00;
     --warning-text: #ffe3a3;
-    --danger-bg: #5c1a1a;
+    --danger-bg: #4a1414;
     --danger-text: #ffd2d2;
-    --ok-bg: #12452a;
+    --ok-bg: #0d3a22;
     --ok-text: #c8f2d6;
-    --shadow: none;
+    --card-bar: #4a6fa8;
+    --nav-active: var(--color-orange);
+    --shadow: 0 1px 3px rgb(2 6 14 / 50%), 0 1px 2px rgb(2 6 14 / 30%);
+    --shadow-md: 0 4px 6px rgb(2 6 14 / 40%), 0 2px 4px rgb(2 6 14 / 25%);
+    --shadow-header: 0 10px 15px rgb(2 6 14 / 50%), 0 4px 6px rgb(2 6 14 / 30%);
 
     color-scheme: dark;
   }
 }
 
 :root[data-theme='dark'] {
-  --bg: #0d1c3e;
-  --surface: #142a57;
-  --surface-raised: #1a3366;
-  --text: #f5f7fb;
-  --text-muted: #c3cbdb;
-  --border: #2e4a80;
+  --bg: #070e1a;
+  --surface: #142743;
+  --surface-raised: #0f1f38;
+  --text: #edf2f7;
+  --text-muted: #8fa3b8;
+  --border: #1e3456;
+  --border-strong: #2a4a78;
   --heading: var(--color-white);
   --link: #9cc1f5;
-  --secondary: #9cc1f5;
-  --on-secondary: var(--color-navy);
+  --secondary: var(--color-navy-light);
+  --secondary-hover: #2a4a8c;
+  --on-secondary: var(--color-white);
   --focus: #8fb8ff;
-  --warning-bg: #4a3500;
+  --warning-bg: #3a2a00;
   --warning-text: #ffe3a3;
-  --danger-bg: #5c1a1a;
+  --danger-bg: #4a1414;
   --danger-text: #ffd2d2;
-  --ok-bg: #12452a;
+  --ok-bg: #0d3a22;
   --ok-text: #c8f2d6;
-  --shadow: none;
+  --card-bar: #4a6fa8;
+  --nav-active: var(--color-orange);
+  --shadow: 0 1px 3px rgb(2 6 14 / 50%), 0 1px 2px rgb(2 6 14 / 30%);
+  --shadow-md: 0 4px 6px rgb(2 6 14 / 40%), 0 2px 4px rgb(2 6 14 / 25%);
+  --shadow-header: 0 10px 15px rgb(2 6 14 / 50%), 0 4px 6px rgb(2 6 14 / 30%);
 
   color-scheme: dark;
 }
