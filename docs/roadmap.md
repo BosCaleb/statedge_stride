@@ -11,20 +11,14 @@ What is still to build for the MVP, what is waiting on StatEdge, and features th
 | M2 Athletes and consent   | Built and tested                                                         |
 | M3 Capture to result      | Built and tested in the browser. The offline loop on the S23 is to test  |
 | M4 Save, history, compare | Built and tested. Gate met in automated tests                            |
-| M5 Reports and sharing    | Not started (API schemas and routes are defined, not implemented)        |
+| M5 Reports and sharing    | Built and tested. PDF and share link on a real phone still to try        |
 | M6 Hardening and pilot    | Partly built (audit log, alerts, ZAP scan in CI); the rest below         |
 
 ## Outstanding for the MVP
 
 ### M5 Reports and sharing
 
-- **Report builder (`/reports/:id`).** Choose one analysis, or two of the same athlete and mode for a comparison; pick three to five key frames (the three automatic ones are always there, others need the clip on the phone); pick which notes to include; choose the name style (first name and initial by default, or full name); preview.
-- **Key frames for reports.** Render any chosen frame at 1280 px with the skeleton and a caption, JPEG at quality 0.8 and under 300 KB. The three automatic frames already exist from M3.
-- **PDF on the phone.** jsPDF and jspdf-autotable, loaded only when needed. A4 portrait: header with wordmark and organisation, athlete block, frame strip, primary and secondary metric tables with confidence and descriptions, the comparison table with caveats, notes, "How to read this", the disclaimer and a footer with the algorithm version and page numbers. Selectable text in Inter and Oswald. Hidden metrics listed once with their reason, never as blanks. Download, or share with the Web Share API.
-- **Report snapshot and storage.** `PUT /v1/reports/{id}` and `PUT /v1/reports/{id}/frames/{n}` through the outbox. Results only: no keypoints, birth year or unselected notes.
-- **Share links.** `POST /v1/reports/{id}/share` (needs a connection and an active sharing consent), 32-byte token shown once, only its hash stored, default expiry 30 days (maximum 90), revoke at any time. Expired, revoked and unknown links look the same.
-- **Public viewer (`/r/:token`).** No sign-in, cookies, analytics or third-party requests; its own small bundle; `noindex`, `no-referrer` and `no-store`. Shows first name and initial, date, frames, primary metrics with confidence, selected notes, expiry and the disclaimer.
-- **Tests.** PDF text checks from a fixed snapshot (disclaimer, metric names, confidence labels, footer, no hidden values); no full name, birth year or unselected note in a shared snapshot; create, open signed-out, revoke and see the unavailable page end to end.
+Built: the report builder, the PDF made on the phone, the report saved with the athlete, share links, the public report page and the athlete's report list (see `docs/decisions.md`, D95 to D103). Still to do on a real phone: make a PDF on the S23 Ultra and an iPhone, send it with the share sheet, and open a link on a parent's phone over 4G against the 3-second budget.
 
 ### M6 Hardening and pilot
 
@@ -43,6 +37,7 @@ What is still to build for the MVP, what is waiting on StatEdge, and features th
 2. M1: a coach signs in on a phone against the dev environment.
 3. M3: the full offline loop on the S23 Ultra.
 4. M4: save offline and flush, and the comparison, on the phone.
+5. M5: a PDF made and sent from the phone, and a share link opened on another phone over 4G.
 
 ### Decisions waiting on StatEdge (open questions in the spec)
 
