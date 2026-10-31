@@ -10,6 +10,8 @@ export const LIMITS = {
   /** Key-frame JPEGs. */
   frameJpegBytes: 300 * 1024,
   maxReportFrames: 5,
+  /** Reports listed per athlete, newest first. */
+  athleteReportList: 100,
   pageDefault: 25,
   pageMax: 100,
   inviteExpiryDays: 7,

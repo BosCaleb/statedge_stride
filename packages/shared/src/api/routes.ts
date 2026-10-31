@@ -33,6 +33,7 @@ import {
   orgPatchSchema,
 } from './org';
 import {
+  athleteReportsSchema,
   frameOrdinalSchema,
   publicReportSchema,
   reportPutSchema,
@@ -380,6 +381,14 @@ export const ROUTES = {
     summary: 'Report snapshot',
     params: id,
     response: reportSchema,
+  },
+  listAthleteReports: {
+    method: 'GET',
+    path: '/v1/athletes/{id}/reports',
+    auth: 'coach',
+    summary: "An athlete's reports, newest first, with any active share link's expiry",
+    params: id,
+    response: athleteReportsSchema,
   },
   createShare: {
     method: 'POST',

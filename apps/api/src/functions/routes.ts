@@ -10,3 +10,4 @@ import './devices';
 import './captures';
 import './analyses';
 import './notes';
+import './reports';
