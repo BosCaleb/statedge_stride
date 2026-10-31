@@ -2,7 +2,8 @@ import { defaultConfig } from '@stride/analysis/config';
 import type { AnalysisResult, MetricResult } from '@stride/shared/analysisResult';
 import type { MetricId } from '@stride/shared/enums';
 import type { ComparisonCaveat } from '@stride/shared/reportSnapshot';
-import { formatValue, isMeasured } from '../results/metricFormat';
+import { isMeasured } from '../results/metricFormat';
+import { formatValue } from '../results/valueFormat';
 
 // Comparing two analyses of one athlete: the change in each measurement, and why the comparison
 // may mislead. The thresholds (analysis config) decide only what the coach is warned about.

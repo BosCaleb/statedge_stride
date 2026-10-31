@@ -3735,6 +3735,32 @@
                     "additionalProperties": false
                   }
                 },
+                "primary": {
+                  "maxItems": 40,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "cadence",
+                      "stride_frequency",
+                      "contact_time",
+                      "flight_time",
+                      "step_length",
+                      "stride_length",
+                      "speed",
+                      "overstride",
+                      "shin_angle_ic",
+                      "knee_flexion_ic",
+                      "hip_flexion_ic",
+                      "trunk_lean",
+                      "vertical_oscillation",
+                      "contact_asymmetry",
+                      "step_time_asymmetry",
+                      "arm_swing_range",
+                      "foot_angle_ic"
+                    ]
+                  }
+                },
                 "hidden": {
                   "maxItems": 40,
                   "type": "array",
@@ -3808,6 +3834,7 @@
                 "algorithmVersion",
                 "gateStatus",
                 "metrics",
+                "primary",
                 "hidden"
               ],
               "additionalProperties": false
@@ -4141,6 +4168,32 @@
                     ]
                   }
                 },
+                "primary": {
+                  "maxItems": 40,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "cadence",
+                      "stride_frequency",
+                      "contact_time",
+                      "flight_time",
+                      "step_length",
+                      "stride_length",
+                      "speed",
+                      "overstride",
+                      "shin_angle_ic",
+                      "knee_flexion_ic",
+                      "hip_flexion_ic",
+                      "trunk_lean",
+                      "vertical_oscillation",
+                      "contact_asymmetry",
+                      "step_time_asymmetry",
+                      "arm_swing_range",
+                      "foot_angle_ic"
+                    ]
+                  }
+                },
                 "hidden": {
                   "maxItems": 40,
                   "type": "array",
@@ -4213,6 +4266,7 @@
                 "algorithmVersion",
                 "gateStatus",
                 "metrics",
+                "primary",
                 "hidden"
               ]
             }

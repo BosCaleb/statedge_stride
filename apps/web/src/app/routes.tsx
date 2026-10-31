@@ -36,6 +36,15 @@ const devRoutes: RouteObject[] = DEV_PAGES
   : [];
 
 export const routes: RouteObject[] = [
+  // The shared report sits outside AppRoot: no sign-in, outbox or offline data code.
+  {
+    path: '/r/:token',
+    lazy: async () => ({
+      Component: (await import('../features/public/PublicReportPage')).PublicReportPage,
+    }),
+    ErrorBoundary: RouteError,
+    HydrateFallback: BootFallback,
+  },
   {
     lazy: async () => ({ Component: (await import('./AppRoot')).AppRoot }),
     ErrorBoundary: RouteError,
@@ -144,6 +153,12 @@ export const routes: RouteObject[] = [
                 path: '/compare',
                 lazy: async () => ({
                   Component: (await import('../features/compare/ComparePage')).ComparePage,
+                }),
+              },
+              {
+                path: '/reports/:id',
+                lazy: async () => ({
+                  Component: (await import('../features/reports/ReportPage')).ReportPage,
                 }),
               },
               {

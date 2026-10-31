@@ -28,6 +28,7 @@ import { needsAttention } from '../../lib/outbox/outbox';
 import { useOutbox, useOutboxEntries } from '../../lib/outbox/OutboxProvider';
 import { strings } from '../../lib/strings';
 import { canAnalyse, useAthlete } from '../athletes/athleteData';
+import { MakeReportButton } from '../reports/ReportLinks';
 import { useSession } from '../sessions/sessionData';
 import { useAnalysisSource, type AnalysisSource } from './analysisSource';
 import { frameAngles } from './frameAngles';
@@ -159,6 +160,11 @@ function ResultView({ source }: { source: AnalysisSource }) {
 
       <GateBanner result={result} />
       <MetricsSection result={result} />
+      {result.gate.status !== 'fail' ? (
+        <div className={form.actions}>
+          <MakeReportButton analysisId={source.id} saved={source.saved} />
+        </div>
+      ) : null}
 
       {source.saved ? (
         <SavedNotes source={source} athlete={athlete.data} />

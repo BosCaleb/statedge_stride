@@ -2,7 +2,8 @@ import type { AnalysisResult, MetricResult } from '@stride/shared/analysisResult
 import type { Side } from '@stride/shared/enums';
 import { useEffect, useMemo, useState } from 'react';
 import form from '../../components/form.module.css';
-import { MetricCard, reasonText } from '../../components/MetricCard';
+import { MetricCard } from '../../components/MetricCard';
+import { reasonText } from './valueFormat';
 import { getThumbnail, type KeyFrameKind } from '../../lib/local/thumbnails';
 import { strings } from '../../lib/strings';
 import { useObjectUrl } from '../../lib/useObjectUrl';

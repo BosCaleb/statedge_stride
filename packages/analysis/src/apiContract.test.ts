@@ -60,6 +60,10 @@ describe('report snapshot', () => {
     algorithmVersion: result.algorithmVersion,
     gateStatus: 'pass' as const,
     metrics: result.metrics.filter((x) => x.value !== null),
+    primary: result.metrics
+      .filter((x) => x.value !== null)
+      .map((x) => x.id)
+      .slice(0, 3),
     hidden: result.metrics
       .filter((x) => x.value === null)
       .map((x) => ({ id: x.id, reasons: x.reasons })),

@@ -1,0 +1,164 @@
+/* The shared report page: the StatEdge header, then the report in one readable column. */
+
+.page {
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  min-height: 60px;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 3px solid var(--color-orange);
+  background: var(--color-navy);
+  box-shadow: var(--shadow-header);
+}
+
+.main {
+  width: 100%;
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-6);
+}
+
+.message {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5) 0;
+}
+
+.report {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.report section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.intro {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.intro h1 {
+  margin: 0;
+}
+
+/* Orange text is too faint on the light page: muted text with an orange bar instead. */
+.eyebrow {
+  margin: 0;
+  padding-left: var(--space-2);
+  border-left: 3px solid var(--color-orange);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.meta {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.frames {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.frames figure {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.frames img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-small);
+}
+
+.frames figcaption {
+  color: var(--text-muted);
+  font-size: var(--text-small);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.metric {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--card-bar);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow);
+}
+
+.metric h3 {
+  margin: 0;
+}
+
+.value {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.sides,
+.description {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+}
+
+.reasons {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-small);
+}
+
+.notes {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.noteDate {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.disclaimer {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-small);
+  font-weight: 600;
+}
+
+.expiry {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-small);
+}

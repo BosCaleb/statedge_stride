@@ -9,7 +9,8 @@ import { ConfidenceBadge } from '../../components/ConfidenceBadge';
 import { GateBanner } from '../../components/GateBanner';
 import { MetricCard } from '../../components/MetricCard';
 import { frameAngles } from './frameAngles';
-import { formatValue, groupMetrics, warningEffects } from './metricFormat';
+import { groupMetrics, warningEffects } from './metricFormat';
+import { formatValue } from './valueFormat';
 
 const uncalibrated = runSynthetic(generateGait({ noisePx: 1 }), {
   mode: 'distance',

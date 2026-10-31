@@ -11,6 +11,7 @@ import ui from '../../components/ui.module.css';
 import { useApi, useMe } from '../../lib/apiContext';
 import { strings } from '../../lib/strings';
 import { HistorySection } from '../history/HistorySection';
+import { AthleteReports } from '../reports/ReportLinks';
 import { athleteKeys, useAthlete, useConsentHistory, useWithdrawConsent } from './athleteData';
 import styles from './athletes.module.css';
 import { useQueryClient } from '@tanstack/react-query';
@@ -99,6 +100,11 @@ export function AthletePage() {
       <section className={styles.section} aria-labelledby="history-heading">
         <h2 id="history-heading">{strings.athlete.historyHeading}</h2>
         <HistorySection athleteId={a.id} />
+      </section>
+
+      <section className={styles.section} aria-labelledby="reports-heading">
+        <h2 id="reports-heading">{strings.reports.listTitle}</h2>
+        <AthleteReports athleteId={a.id} />
       </section>
 
       {isAdmin ? <AdminTools athleteId={a.id} fullName={`${a.firstName} ${a.lastName}`} /> : null}

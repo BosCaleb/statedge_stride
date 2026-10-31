@@ -8,7 +8,7 @@ import { ClipPicker } from '../../components/ClipPicker';
 import { ConfidenceBadge } from '../../components/ConfidenceBadge';
 import form from '../../components/form.module.css';
 import { FrameCanvas, SPEEDS, type FrameCanvasHandle } from '../../components/FrameCanvas';
-import { unitLabel } from '../../components/MetricCard';
+import { unitLabel } from '../results/valueFormat';
 import { ErrorState, LoadingState } from '../../components/States';
 import ui from '../../components/ui.module.css';
 import { strings } from '../../lib/strings';
@@ -16,9 +16,10 @@ import { useAthlete } from '../athletes/athleteData';
 import { useAthleteHistory } from '../history/historyData';
 import { TrendSection } from '../history/HistorySection';
 import { useAnalysisSource, type AnalysisSource } from '../results/analysisSource';
-import { formatValue } from '../results/metricFormat';
+import { formatValue } from '../results/valueFormat';
 import { useClipFile } from '../results/useClipFile';
 import { useKeypoints } from '../results/useKeypoints';
+import { MakeReportButton } from '../reports/ReportLinks';
 import { useSession } from '../sessions/sessionData';
 import { comparisonCaveats, metricChanges } from './compareLogic';
 import styles from './compare.module.css';
@@ -95,6 +96,9 @@ function Comparison({ pair }: { pair: [AnalysisSource, AnalysisSource] }) {
   return (
     <div className={shell.page}>
       <h1>{strings.compare.title}</h1>
+      {before.saved && after.saved && before.result.mode === after.result.mode ? (
+        <MakeReportButton analysisId={after.id} compareId={before.id} saved />
+      ) : null}
       {athlete.data ? (
         <p className={styles.lead}>
           {athlete.data.firstName} {athlete.data.lastName}

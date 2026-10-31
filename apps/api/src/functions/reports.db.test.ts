@@ -136,6 +136,7 @@ function snapshot(s: Saved, overrides: Partial<ReportSnapshot> = {}): ReportSnap
         algorithmVersion: result.algorithmVersion,
         gateStatus: 'pass',
         metrics: result.metrics.slice(0, 3),
+        primary: result.metrics.slice(0, 2).map((m) => m.id),
         hidden: [],
       },
     ],
