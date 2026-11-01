@@ -11,7 +11,8 @@ RUN corepack enable
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
-# The pose model and its WASM runtime, pinned and checksummed (scripts/fetch-models.ts).
+# The pose models, the runner detector and the WASM runtime, pinned and checksummed
+# (scripts/fetch-models.ts).
 RUN pnpm fetch-models
 
 EXPOSE 5173 7071

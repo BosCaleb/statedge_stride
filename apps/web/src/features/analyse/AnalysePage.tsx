@@ -3,8 +3,10 @@ import type { AnalysisResult } from '@stride/shared/analysisResult';
 import type { FailCode } from '@stride/shared/enums';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import type { RunnerChoice } from '@stride/analysis/runner';
 import { Link, useNavigate, useParams } from 'react-router';
 import { probeClip } from '../../analysis-runtime/probe';
+import { findRunner } from '../../analysis-runtime/runnerAssist';
 import shell from '../../app/shell.module.css';
 import { ClipPicker } from '../../components/ClipPicker';
 import form from '../../components/form.module.css';
@@ -17,6 +19,7 @@ import { useLocalCalibrations, useLocalClips } from '../../lib/local/localQuerie
 import type { LocalClip } from '../../lib/local/records';
 import { strings } from '../../lib/strings';
 import { useFrameAt } from '../../lib/useFrameAt';
+import { readPreference } from '../../lib/storage';
 import { useJobStore } from '../../stores/jobStore';
 import { canAnalyse, useAthlete } from '../athletes/athleteData';
 import { useClipFile } from '../results/useClipFile';
@@ -80,6 +83,40 @@ function useClipTimes(file: Blob | null): Float64Array | null {
   return times;
 }
 
+/** Test builds only: look for the runner (needs the detector model, which most tests skip). */
+export const E2E_FIND_RUNNER_PREF = 'stride.e2e.findRunner';
+
+type RunnerSearch =
+  | { status: 'idle' }
+  | { status: 'searching' }
+  | { status: 'found'; choice: RunnerChoice }
+  | { status: 'notFound' };
+
+/** Looks for the runner once the clip is ready, to propose the athlete box. */
+function useRunnerSearch(
+  file: Blob | null,
+  times: Float64Array | null,
+  size: { width: number; height: number },
+  fps: number,
+): RunnerSearch {
+  const [search, setSearch] = useState<RunnerSearch>({ status: 'idle' });
+  const enabled =
+    import.meta.env.VITE_E2E !== 'true' || readPreference(E2E_FIND_RUNNER_PREF) === '1';
+  const { width, height } = size;
+  useEffect(() => {
+    if (!enabled || !file || !times) return;
+    const controller = new AbortController();
+    setSearch({ status: 'searching' });
+    findRunner(file, times, { width, height }, fps, controller.signal)
+      .then((choice) => setSearch(choice ? { status: 'found', choice } : { status: 'notFound' }))
+      .catch(() => {
+        if (!controller.signal.aborted) setSearch({ status: 'notFound' });
+      });
+    return () => controller.abort();
+  }, [enabled, file, times, width, height, fps]);
+  return search;
+}
+
 function AnalyseSetup({ clip }: { clip: LocalClip }) {
   const queryClient = useQueryClient();
   const session = useSession(clip.sessionId);
@@ -108,6 +145,14 @@ function AnalyseSetup({ clip }: { clip: LocalClip }) {
   const mode = session.data?.session.mode;
   const consented = canAnalyse(athlete.data);
   const jobRunning = useJobStore((s) => s.running);
+  const search = useRunnerSearch(file, times, size, clip.detectedFps ?? clip.declaredFps);
+  // A found runner moves the scrubber to its frame and proposes its box, once.
+  const [applied, setApplied] = useState<RunnerChoice | null>(null);
+  if (search.status === 'found' && applied !== search.choice) {
+    setApplied(search.choice);
+    setFrameIndex(search.choice.frame);
+    setRoi(search.choice.roi);
+  }
 
   const name = athlete.data
     ? `${athlete.data.firstName} ${athlete.data.lastName}`
@@ -173,6 +218,17 @@ function AnalyseSetup({ clip }: { clip: LocalClip }) {
       <section className={styles.section} aria-labelledby="box-heading">
         <h2 id="box-heading">{strings.analyse.boxStep}</h2>
         <p className={form.hint}>{strings.analyse.boxHint}</p>
+        {search.status === 'searching' ? (
+          <p role="status">{strings.analyse.findingRunner}</p>
+        ) : search.status === 'found' ? (
+          <p className={ui.notice} role="status">
+            {strings.analyse.runnerFound}
+          </p>
+        ) : search.status === 'notFound' ? (
+          <p className={ui.notice} role="status">
+            {strings.analyse.runnerNotFound}
+          </p>
+        ) : null}
         {fileState.kind === 'loading' || (file && !times) ? (
           <LoadingState />
         ) : file && times ? (

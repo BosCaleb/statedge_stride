@@ -114,6 +114,8 @@ jobs:
         run: |
           echo "BUILD_VERSION=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
           echo "VITE_BUILD_VERSION=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+      - name: Fetch the pinned models (pose, runner detector, WASM runtime; checksummed)
+        run: pnpm fetch-models
       - name: Build the web app for dev and prod
         run: pnpm --filter @stride/web build
       - name: Build the API and the migrator

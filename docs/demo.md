@@ -103,7 +103,7 @@ This uses ports 5173 (web), 7071 (API) and 1433 (database), and prints a share l
 1. **Home → New session.** Distance mode, tick Pieter Demo, create.
 2. **Import both test videos** together. Mark `synthetic-calibration-240fps.mp4` as "The calibration clip"; the run is matched to Pieter. Say they were filmed at 240 fps if asked.
 3. **Calibrate.** Tap the two orange cones and enter **5 m** between them.
-4. **Analyse.** Open Pieter's run, move to a frame where the whole runner is in view, draw a box around him, and press "Analyse this run". It takes from under a minute to a few minutes, depending on your computer.
+4. **Analyse.** Open Pieter's run, let Stride look for the runner (it moves to a good frame and draws a box when it finds one; on the drawn stick figure it usually does not), or move to a frame where the whole runner is in view and draw a box around him, then press "Analyse this run". It takes from under a minute to a few minutes, depending on your computer.
 5. **Expect the quality checks to fail on this video.** The real pose model does not reliably see the drawn stick figure as a person, so the analysis ends with "This clip did not pass the quality checks", each reason measured, and a tip to fix the shoot. That is the screen a coach sees after a poor shoot, and nothing can be saved from it.
 6. **For a result you can save, use a real slow-motion clip** of someone who agrees to it: film yourself or a colleague side-on, the whole body in view, at 240 fps if the phone can (120 fps works for distance mode), with two cones a known distance apart in a short calibration clip first. Import it for Pieter as above, then **save**, add a note, make a report, share it and revoke it. Keep such clips out of the repository.
 

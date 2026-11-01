@@ -34,7 +34,21 @@ export const TASKS_VISION_VERSION = manifest.tasksVisionVersion;
 /** The module-worker WASM runtime files (see mediapipeEstimator.ts). */
 export const WASM_FILES = ['vision_wasm_module_internal.js', 'vision_wasm_module_internal.wasm'];
 
-/** Every file "Prepare for offline" downloads into the models-v1 cache. */
+/** The object detector that finds the runner for the athlete box suggestion. */
+export function detectorUrl(): string {
+  return `${import.meta.env.BASE_URL}models/${manifest.detector.file}`;
+}
+
+/**
+ * Every file "Prepare for offline" downloads into the models-v1 cache: the full pose model
+ * (always, as the fallback), the heavy one when the phone uses it, the runner detector and the
+ * WASM runtime.
+ */
 export function offlineModelFiles(variant: ModelVariant): string[] {
-  return [modelUrl(variant), ...WASM_FILES.map((f) => `${wasmBaseUrl()}/${f}`)];
+  return [
+    modelUrl('full'),
+    ...(variant === 'full' ? [] : [modelUrl(variant)]),
+    detectorUrl(),
+    ...WASM_FILES.map((f) => `${wasmBaseUrl()}/${f}`),
+  ];
 }

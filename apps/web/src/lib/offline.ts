@@ -1,12 +1,14 @@
 import { offlineModelFiles } from '../analysis-runtime/poseEstimator';
+import { chosenPoseModel } from './poseModelChoice';
 
-// "Prepare for offline": downloads the pose model and its WASM runtime into the models-v1 cache,
-// the same cache the service worker's CacheFirst route reads, so analysis works with no signal.
+// "Prepare for offline": downloads the pose model this phone uses (and the full one as its
+// fallback), the runner detector and the WASM runtime into the models-v1 cache, the same cache the
+// service worker's CacheFirst route reads, so analysis works with no signal.
 
 export const MODELS_CACHE = 'models-v1';
 
 export async function isReadyOffline(
-  files: string[] = offlineModelFiles('full'),
+  files: string[] = offlineModelFiles(chosenPoseModel()),
 ): Promise<boolean> {
   if (typeof caches === 'undefined') return false;
   const cache = await caches.open(MODELS_CACHE);
@@ -17,7 +19,7 @@ export async function isReadyOffline(
 export async function prepareOffline(
   onProgress: (fraction: number) => void,
   signal?: AbortSignal,
-  files: string[] = offlineModelFiles('full'),
+  files: string[] = offlineModelFiles(chosenPoseModel()),
 ): Promise<void> {
   const cache = await caches.open(MODELS_CACHE);
   const missing: string[] = [];

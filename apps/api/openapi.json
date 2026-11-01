@@ -844,8 +844,6 @@
                   "stanceSpeedLegPerSec",
                   "groundBandLeg",
                   "minStanceMs",
-                  "minStepMs",
-                  "duplicateShareOfNeighbour",
                   "maxStanceMs",
                   "mergeGapFrames",
                   "icToleranceMs",
@@ -1417,6 +1415,66 @@
                   "sameFrameRateShare"
                 ],
                 "additionalProperties": false
+              },
+              "runnerDetection": {
+                "type": "object",
+                "properties": {
+                  "samples": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "minScore": {
+                    "type": "number"
+                  },
+                  "minHeightShare": {
+                    "type": "number"
+                  },
+                  "edgeMarginShare": {
+                    "type": "number"
+                  },
+                  "staticIou": {
+                    "type": "number"
+                  },
+                  "staticShare": {
+                    "type": "number"
+                  },
+                  "padShare": {
+                    "type": "number"
+                  },
+                  "nearLargestShare": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "samples",
+                  "minScore",
+                  "minHeightShare",
+                  "edgeMarginShare",
+                  "staticIou",
+                  "staticShare",
+                  "padShare",
+                  "nearLargestShare"
+                ],
+                "additionalProperties": false
+              },
+              "poseModel": {
+                "type": "object",
+                "properties": {
+                  "heavyMaxMsPerFrame": {
+                    "type": "number"
+                  },
+                  "benchmarkFrames": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "heavyMaxMsPerFrame",
+                  "benchmarkFrames"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
@@ -1431,8 +1489,7 @@
               "confidence",
               "spread",
               "calibration",
-              "gate",
-              "comparison"
+              "gate"
             ],
             "additionalProperties": false
           },
@@ -2171,8 +2228,6 @@
                   "stanceSpeedLegPerSec",
                   "groundBandLeg",
                   "minStanceMs",
-                  "minStepMs",
-                  "duplicateShareOfNeighbour",
                   "maxStanceMs",
                   "mergeGapFrames",
                   "icToleranceMs",
@@ -2717,6 +2772,64 @@
                   "sameScaleShare",
                   "sameFrameRateShare"
                 ]
+              },
+              "runnerDetection": {
+                "type": "object",
+                "properties": {
+                  "samples": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "minScore": {
+                    "type": "number"
+                  },
+                  "minHeightShare": {
+                    "type": "number"
+                  },
+                  "edgeMarginShare": {
+                    "type": "number"
+                  },
+                  "staticIou": {
+                    "type": "number"
+                  },
+                  "staticShare": {
+                    "type": "number"
+                  },
+                  "padShare": {
+                    "type": "number"
+                  },
+                  "nearLargestShare": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "samples",
+                  "minScore",
+                  "minHeightShare",
+                  "edgeMarginShare",
+                  "staticIou",
+                  "staticShare",
+                  "padShare",
+                  "nearLargestShare"
+                ]
+              },
+              "poseModel": {
+                "type": "object",
+                "properties": {
+                  "heavyMaxMsPerFrame": {
+                    "type": "number"
+                  },
+                  "benchmarkFrames": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "heavyMaxMsPerFrame",
+                  "benchmarkFrames"
+                ]
               }
             },
             "required": [
@@ -2731,8 +2844,7 @@
               "confidence",
               "spread",
               "calibration",
-              "gate",
-              "comparison"
+              "gate"
             ]
           },
           "createdAt": {

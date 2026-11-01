@@ -11,7 +11,7 @@ pnpm install
 pnpm db:up          # SQL Server 2022 in Docker
 pnpm db:migrate     # creates the stride database and the stride_api login, applies migrations
 pnpm seed           # two organisations, coaches, athletes and consents
-pnpm fetch-models   # the pinned pose model and WASM runtime, checksummed, into apps/web/public/models
+pnpm fetch-models   # the pinned pose models, runner detector and WASM runtime, checksummed, into apps/web/public/models
 pnpm dev            # web on http://localhost:5173, API on http://localhost:7071/api
 ```
 

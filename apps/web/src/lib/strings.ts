@@ -373,6 +373,11 @@ export const en = {
     calibrationLabel: 'Scale for this run',
     noCalibration: 'No calibration',
     boxStep: 'Box around the athlete',
+    findingRunner: 'Looking for the runner…',
+    runnerFound:
+      'Stride found the runner and drew a box. Check that it covers the whole runner, or draw a new one.',
+    runnerNotFound:
+      'Stride could not find the runner. Move to a frame where the whole runner is in view and draw a box around them.',
     boxHint:
       'Move to a frame near the start of the pass where the whole athlete is in view, then drag a box around them. The analysis starts from that frame.',
     boxLabel: 'Frame from the run. Drag to draw a box around the athlete.',
@@ -596,6 +601,16 @@ export const en = {
     phone: 'Phone',
     tier: 'Tier',
     slowMotion: 'Slow motion',
+    poseTitle: 'Pose model for this phone',
+    poseIntro:
+      'A more detailed pose model finds small or distant athletes better. Test whether this phone runs it fast enough with the clip above. It is a 30 MB download the first time.',
+    poseTest: 'Test the detailed model',
+    poseTesting: 'Testing the detailed model…',
+    poseHeavy: (ms: number) => `This phone uses the detailed model. It took ${ms} ms a frame.`,
+    poseFull: (ms: number) =>
+      `This phone uses the standard model. The detailed one took ${ms} ms a frame, too slow to analyse a 5-second clip in time.`,
+    poseNotTested: 'Not tested yet: this phone uses the standard model.',
+    poseFailed: 'The test could not run, so this phone uses the standard model.',
     tiers: {
       A: 'A: tested, recommended',
       B: 'B: works, with limits',

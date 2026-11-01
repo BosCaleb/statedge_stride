@@ -49,4 +49,4 @@ To click through the app with demo athletes, results, a report and a share link,
 | `pnpm create-org`                            | Create an organisation and its first admin invite                                  |
 | `pnpm licences`                              | Licence allowlist check                                                            |
 | `pnpm openapi`                               | Regenerate `apps/api/openapi.json`                                                 |
-| `pnpm fetch-models`                          | Download the pinned pose model and WASM runtime                                    |
+| `pnpm fetch-models`                          | Download the pinned pose models, runner detector and WASM runtime                  |

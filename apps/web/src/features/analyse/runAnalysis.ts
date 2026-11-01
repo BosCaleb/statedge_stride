@@ -10,6 +10,7 @@ import type { CalibrationInput, EstimatorSpec } from '../../analysis-runtime/mes
 import { storeLocalResult } from '../../lib/local/localQueries';
 import type { LocalCalibration, LocalClip, LocalResult } from '../../lib/local/records';
 import { putThumbnail, type KeyFrameKind } from '../../lib/local/thumbnails';
+import { chosenPoseModel } from '../../lib/poseModelChoice';
 import { readPreference } from '../../lib/storage';
 import { strings } from '../../lib/strings';
 import { useJobStore } from '../../stores/jobStore';
@@ -42,7 +43,7 @@ function estimator(): EstimatorSpec {
     if (readPreference(E2E_POSE_DELEGATE_PREF) === 'CPU')
       return { kind: 'mediapipe', variant: 'full', delegate: 'CPU' };
   }
-  return { kind: 'mediapipe', variant: 'full', delegate: 'GPU' };
+  return { kind: 'mediapipe', variant: chosenPoseModel(), delegate: 'GPU' };
 }
 
 export function calibrationInput(cal: LocalCalibration | null): CalibrationInput | null {

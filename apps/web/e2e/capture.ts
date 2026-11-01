@@ -60,6 +60,7 @@ export async function importAndCalibrate(
 /** Drags the athlete box on the first frame of the synthetic run (the runner starts on the left). */
 export async function drawAthleteBox(page: Page) {
   const canvas = page.getByLabel(/Frame from the run/);
+  await canvas.scrollIntoViewIfNeeded();
   const box = await canvas.boundingBox();
   if (!box) throw new Error('frame not visible');
   const at = (x: number, y: number) => ({

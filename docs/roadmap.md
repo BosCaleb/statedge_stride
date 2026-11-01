@@ -50,6 +50,26 @@ Built: the report builder, the PDF made on the phone, the report saved with the 
 7. Azure SQL free database now, or the migrated Postgres later.
 8. Whether the free-database exhaustion behaviour for prod should change from pause to billing once coaches rely on it (see the cost notes in `docs/azure-deployment.md`).
 
+## AI assistance
+
+Stride already runs AI where it matters most: MediaPipe's pose model finds 33 body points in every frame, on the phone. The steps after it (filters, foot contacts, measurements, confidence and the quality gate) are deliberate rules: every number can be explained and the confidence rules can say why, with no training data needed. More AI is added where it removes work or fixes a known weakness, in this order.
+
+### Before the pilot (built)
+
+- **Runner detection.** On the analyse screen, MediaPipe's object detector (EfficientDet-Lite0, int8, 4.6 MB, Apache-2.0) looks for people in a dozen frames of the clip. Stride proposes a box around the runner, at the earliest frame where they are nearly as large as they get, ignoring people who stand still. The coach confirms or draws another; with nobody found, drawing by hand works as before. See D107.
+- **Heavy pose model on fast phones.** The device check times the heavy pose model on the coach's own test clip. A phone that runs it within 55 ms a frame (a 5 s, 240 fps clip within the spec's 90 s) uses it for analysis; others keep the full model, and an analysis falls back to the full model when the heavy one cannot load. See D108.
+
+### During the pilot
+
+- **Contact correction in the result viewer.** Let the coach nudge a detected foot contact or toe-off to the right frame. The coach's result improves at once, and every correction becomes a labelled example (stored with consent) for the learned detector below.
+- **Measure on real phones.** Tune `heavyMaxMsPerFrame` and the runner detection values from the pilot phones' device checks and clips.
+
+### After the pilot
+
+- **Learned foot-contact detector.** A small model (well under 1 MB, ONNX Runtime Web or TensorFlow.js) that reads the body points over time and marks contacts and toe-offs, trained on the corrections above. It targets the weakness seen on real clips: missed or doubled landings when the athlete is small or the far leg is hidden. Ships as a new algorithm version only when the fixtures show it beats the rules.
+- **Automatic calibration** from cones or track markings found by an object detector, instead of two taps.
+- **AI summary of a report** (only if StatEdge wants it): a server-side language model given the measurements only, never video; off by default, describing and never judging (Stride has no validated norms), and reviewed by the coach before anyone else sees it. Needs consent and the POPIA review. Language models small enough for the browser (around 2 GB) are too heavy for the phones Stride targets.
+
 ## After the MVP
 
 The spec's stretch list comes first; the rest is grouped by the value it adds. None of these is built or approved, and each new dependency or service needs StatEdge's approval.
@@ -83,8 +103,7 @@ The spec's stretch list comes first; the rest is grouped by the value it adds. N
 
 - **Calibrate the configuration on recorded clips:** grow the fixture set (ten clips minimum in the spec) and re-tune the gate and filters with each algorithm version.
 - **Automatic calibration** from known track markings or a printed marker, instead of two taps.
-- **Better foot contact detection** from the heel and toe landmarks with a learned classifier, once there is labelled data.
-- **Model choice per phone:** the lite pose model on slower phones, the full or heavy model on fast ones, picked by the device check.
+- **Lite pose model on the slowest phones:** the heavy-or-full choice is built (see AI assistance); a third step down to the lite model would help budget phones that are slow even with the full one.
 
 ### Cost, speed and operations
 
