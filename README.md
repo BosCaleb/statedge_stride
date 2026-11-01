@@ -12,15 +12,15 @@ A web app for coaches to analyse running technique from phone slow-motion video.
 
 ## Layout
 
-| Path                | What                                                                                                 |
-| ------------------- | ---------------------------------------------------------------------------------------------------- |
-| `apps/web`          | React 18 + Vite installable PWA. `src/analysis-runtime` holds the decoder, pose estimator and worker |
-| `apps/api`          | Azure Functions (Node 22, v4 model). `migrations/` holds the numbered SQL files                      |
-| `packages/shared`   | zod schemas: API contract, analysis result, report snapshot, enums                                   |
-| `packages/analysis` | Pure TypeScript analysis engine: filters, events, metrics, confidence, gate                          |
-| `fixtures`          | Keypoint fixtures (never video of identifiable people) and tiny synthetic test clips                 |
-| `scripts`           | Staff and developer tools: migrate, create-org, seed, dev, licences, OpenAPI, models                 |
-| `infra`             | Bicep templates, environment settings and the deploy script                                          |
+| Path                | What                                                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `apps/web`          | React 18 + Vite installable PWA. `src/analysis-runtime` holds the decoder, pose estimator and worker            |
+| `apps/api`          | Azure Functions (Node 22, v4 model). `migrations/` holds the numbered SQL files                                 |
+| `packages/shared`   | zod schemas: API contract, analysis result, report snapshot, enums                                              |
+| `packages/analysis` | Pure TypeScript analysis engine: filters, events, metrics, confidence, gate                                     |
+| `fixtures`          | Keypoint fixtures (never video of identifiable people) and tiny synthetic test clips                            |
+| `scripts`           | Staff and developer tools: migrate, create-org, invite-admin, revoke-link, seed, dev, licences, OpenAPI, models |
+| `infra`             | Bicep templates, environment settings and the deploy script                                                     |
 
 ## Quick start
 
@@ -47,6 +47,8 @@ To click through the app with demo athletes, results, a report and a share link,
 | `pnpm db:up`, `pnpm db:migrate`, `pnpm seed` | Local database                                                                     |
 | `pnpm demo`                                  | Local database with the demo profile, the pose model and `pnpm dev` (docs/demo.md) |
 | `pnpm create-org`                            | Create an organisation and its first admin invite                                  |
+| `pnpm invite-admin`                          | Invite an admin to an existing organisation (runbook: a coach is locked out)       |
+| `pnpm revoke-link`                           | Take a share link down from the link alone (runbook: a link must be revoked)       |
 | `pnpm licences`                              | Licence allowlist check                                                            |
 | `pnpm openapi`                               | Regenerate `apps/api/openapi.json`                                                 |
 | `pnpm fetch-models`                          | Download the pinned pose models, runner detector and WASM runtime                  |

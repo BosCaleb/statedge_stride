@@ -12,7 +12,7 @@ What is still to build for the MVP, what is waiting on StatEdge, and features th
 | M3 Capture to result      | Built and tested in the browser. The offline loop on the S23 is to test  |
 | M4 Save, history, compare | Built and tested. Gate met in automated tests                            |
 | M5 Reports and sharing    | Built and tested. PDF and share link on a real phone still to try        |
-| M6 Hardening and pilot    | Partly built (audit log, alerts, ZAP scan in CI); the rest below         |
+| M6 Hardening and pilot    | Partly built (sweep, telemetry, scoping tests, runbook); the rest below  |
 
 ## Outstanding for the MVP
 
@@ -22,14 +22,20 @@ Built: the report builder, the PDF made on the phone, the report saved with the 
 
 ### M6 Hardening and pilot
 
-- **Retention sweep.** A daily timer function that removes what has passed its retention period (clip metadata past the organisation's setting, expired share links and their frames), writes a `retention.sweep` audit row, and is tested against SQL Server.
-- **Browser telemetry.** The Application Insights browser SDK for unhandled errors and failed API calls only, with the scrubbing initialiser (no query strings, bodies or person fields), and the operational events `analysis_completed`, `analysis_failed` and `device_check`. These events also become the evidence for the tested phone list.
-- **Error boundary to telemetry.** The support code is already shown; send the error with it.
-- **Security checks before the pilot.** Triage the first OWASP ZAP findings and make the scan gate the dev deploy; try to break organisation scoping with a second test organisation, including direct SQL as the API identity; review the privacy notice, consent template and data processing terms with a POPIA practitioner.
+Built (see `docs/decisions.md`, D111 to D115):
+
+- **Retention sweep.** `retention-sweep` runs daily at 00:00 UTC, per organisation inside `withOrg`: expired and revoked share links with their frames, expired invites, and audit rows older than 24 months, with one `retention.sweep` audit row of counts. Tested against SQL Server. Uploaded clips are not swept because uploads (stretch) do not exist yet.
+- **Browser telemetry.** The Application Insights SDK for unhandled errors and failed API calls only (by route name), with the scrubbing initialiser, and the events `analysis_completed`, `analysis_failed` and `device_check`. Off in builds without a connection string. These events also become the evidence for the tested phone list.
+- **Error boundary to telemetry.** Both error screens send the error with the support code the coach can copy.
+- **Organisation scoping.** A second test organisation, every table checked in direct SQL as the API identity and every id-taking route called across the boundary; nothing leaked.
+- **Runbook.** Incident steps in `docs/runbook.md` for a paused database, the free allowance used up, a coach locked out, a link to revoke and a data request, with two staff scripts (`pnpm invite-admin`, `pnpm revoke-link`).
+
+Still to do:
+
+- **Security checks before the pilot.** Triage the first OWASP ZAP findings and make the scan gate the dev deploy; review the privacy notice, consent template and data processing terms with a POPIA practitioner.
 - **Accessibility pass.** Axe checks already run in the browser tests; add a manual screen reader pass (TalkBack and VoiceOver) of the main flow.
 - **iOS pass.** Safari on iPhone: decoding, the pose model, storage eviction, the missing background sync, and the capture guide for iPhone slow motion.
-- **First deployment.** Run `infra/deploy.sh dev` and prod, fill in the web settings, and confirm the first sign-in, migration, save and share against Azure (see `docs/azure-deployment.md`).
-- **Runbook.** Extend `docs/runbook.md` with incident steps: database paused, free allowance used up, a coach locked out, a link to revoke, a data request.
+- **First deployment.** Run `infra/deploy.sh dev` and prod, fill in the web settings, and confirm the first sign-in, migration, save and share against Azure (see `docs/azure-deployment.md`). Then check that the first night's sweep ran and that browser telemetry arrives scrubbed (`docs/runbook.md`, Monitoring).
 
 ### Gates still open (need the phone or Azure)
 

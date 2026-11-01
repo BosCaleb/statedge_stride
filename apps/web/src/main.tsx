@@ -4,12 +4,14 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { AppErrorBoundary } from './app/ErrorBoundary';
 import { routes } from './app/routes';
+import { initTelemetry } from './lib/telemetry';
 import { applyTheme, loadTheme } from './lib/theme';
 import './styles/fonts.css';
 import './styles/tokens.css';
 import './styles/base.css';
 
 applyTheme(loadTheme());
+initTelemetry();
 
 // Ask the browser to keep this origin's storage (offline data, clips) once the app is installed.
 const standalone = window.matchMedia('(display-mode: standalone)').matches;

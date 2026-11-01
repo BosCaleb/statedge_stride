@@ -1,7 +1,7 @@
 import { defaultConfig } from '@stride/analysis/config';
 import type { DeviceCheckPost } from '@stride/shared/api/devices';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { readClipFacts, type ClipFacts } from '../../analysis-runtime/clipFacts';
 import { webCodecsSupported } from '../../analysis-runtime/decoder';
 import { FrameGrabber } from '../../analysis-runtime/frameGrab';
@@ -18,6 +18,7 @@ import { useApi } from '../../lib/apiContext';
 import { useOutbox } from '../../lib/outbox/OutboxProvider';
 import { chosenPoseModel, readPoseTiming, writePoseTiming } from '../../lib/poseModelChoice';
 import { strings } from '../../lib/strings';
+import { thisPhoneFamily, trackEvent } from '../../lib/telemetry';
 import { GateChecksList } from '../analyse/GateChecksList';
 import { FPS_CHOICES } from '../import/importLogic';
 import {
@@ -101,6 +102,15 @@ export function DeviceCheckPage() {
           defaultConfig,
         )
       : null;
+
+  // One device_check event per clip checked: the result only.
+  const reportedFor = useRef<Checked | null>(null);
+  const result = outcome?.result;
+  useEffect(() => {
+    if (checked?.kind !== 'done' || !result || reportedFor.current === checked) return;
+    reportedFor.current = checked;
+    trackEvent({ name: 'device_check', result, phoneFamily: thisPhoneFamily() });
+  }, [checked, result]);
 
   const record = async () => {
     if (checked?.kind !== 'done' || !outcome) return;

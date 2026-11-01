@@ -8,6 +8,7 @@ import { ConfidenceBadge } from '../../components/ConfidenceBadge';
 import { StatEdgeLoader } from '../../components/StatEdgeLoader';
 import { config } from '../../lib/config';
 import { strings } from '../../lib/strings';
+import { trackFailedApiCall } from '../../lib/telemetry';
 import { mainAnalysis, metricLines, noteDate } from '../reports/reportView';
 import styles from './publicReport.module.css';
 
@@ -28,13 +29,23 @@ const api = (token: string, rest = '') =>
   `${config.apiBaseUrl}/v1/public/reports/${encodeURIComponent(token)}${rest}`;
 
 async function load(token: string, signal: AbortSignal): Promise<State> {
+  const started = performance.now();
   const res = await fetch(api(token), {
     signal,
     credentials: 'omit',
     referrerPolicy: 'no-referrer',
   });
   if (res.status === 404 || res.status === 400) return { status: 'gone' };
-  if (!res.ok) return { status: 'failed' };
+  if (!res.ok) {
+    // By name only: the address holds the token.
+    trackFailedApiCall({
+      route: 'publicReport',
+      method: 'GET',
+      status: res.status,
+      durationMs: Math.round(performance.now() - started),
+    });
+    return { status: 'failed' };
+  }
   const report = publicReportSchema.parse(await res.json());
   const frames = new Map<number, string>();
   for (const frame of report.snapshot.frames) {

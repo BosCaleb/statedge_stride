@@ -13,6 +13,7 @@ import { putThumbnail, type KeyFrameKind } from '../../lib/local/thumbnails';
 import { chosenPoseModel } from '../../lib/poseModelChoice';
 import { readPreference } from '../../lib/storage';
 import { strings } from '../../lib/strings';
+import { thisPhoneFamily, trackEvent } from '../../lib/telemetry';
 import { useJobStore } from '../../stores/jobStore';
 import { renderKeyFrame } from '../results/keyFrameImage';
 
@@ -124,6 +125,24 @@ export async function keepResult(
   return record;
 }
 
+/** The analysis_completed or analysis_failed event: counts and codes, nothing about the athlete. */
+function reportOutcome(req: AnalyseRequest, outcome: JobOutcome): void {
+  if (outcome.kind === 'failed') {
+    if (outcome.code !== 'cancelled')
+      trackEvent({ name: 'analysis_failed', code: outcome.code, phoneFamily: thisPhoneFamily() });
+    return;
+  }
+  trackEvent({
+    name: 'analysis_completed',
+    mode: req.mode,
+    gateStatus: outcome.result.gate.status,
+    durationMs: Math.round(outcome.stats.wallMs),
+    frameCount: outcome.result.clip.frameCount,
+    fps: Math.round(outcome.result.captureFps),
+    phoneFamily: thisPhoneFamily(),
+  });
+}
+
 /** Starts the job and follows it to the end in the job store. */
 export function startJob(queryClient: QueryClient, req: AnalyseRequest): void {
   const store = useJobStore.getState();
@@ -146,6 +165,7 @@ export function startJob(queryClient: QueryClient, req: AnalyseRequest): void {
   store.begin(req.clip.id, handle);
   void handle.outcome.then(async (outcome) => {
     const { finish } = useJobStore.getState();
+    reportOutcome(req, outcome);
     if (outcome.kind === 'failed') {
       finish(req.clip.id, { kind: 'failed', code: outcome.code, detail: outcome.detail });
     } else if (outcome.result.gate.status === 'fail') {
@@ -155,6 +175,11 @@ export function startJob(queryClient: QueryClient, req: AnalyseRequest): void {
         const kept = await keepResult(queryClient, req, outcome);
         finish(req.clip.id, { kind: 'kept', resultId: kept.id });
       } catch (error) {
+        trackEvent({
+          name: 'analysis_failed',
+          code: 'out_of_memory',
+          phoneFamily: thisPhoneFamily(),
+        });
         finish(req.clip.id, {
           kind: 'failed',
           code: 'out_of_memory',

@@ -93,4 +93,30 @@ describe('API client', () => {
     ).rejects.toThrow();
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it('tells onFailure about error answers and lost requests, by route name only', async () => {
+    const failures: { route: string; method: string; status: number; durationMs: number }[] = [];
+    const answers = [
+      json({ type: 'x', title: 'Gone', status: 404, code: 'not_found', requestId: 'r' }, 404),
+      new TypeError('Failed to fetch'),
+      json(athlete, 200),
+    ];
+    const call = createApiClient({
+      baseUrl: 'https://api.test/api',
+      getToken: () => Promise.resolve('t'),
+      fetch: () => {
+        const next = answers.shift();
+        return next instanceof Error ? Promise.reject(next) : Promise.resolve(next ?? json({}));
+      },
+      onFailure: (f) => failures.push(f),
+    });
+    await call('getAthlete', { params: { id: athlete.id } }).catch(() => undefined);
+    await call('getAthlete', { params: { id: athlete.id } }).catch(() => undefined);
+    await call('getAthlete', { params: { id: athlete.id } });
+    expect(failures.map(({ durationMs: _d, ...rest }) => rest)).toEqual([
+      { route: 'getAthlete', method: 'GET', status: 404 },
+      { route: 'getAthlete', method: 'GET', status: 0 },
+    ]);
+    expect(failures.every((f) => Number.isFinite(f.durationMs) && f.durationMs >= 0)).toBe(true);
+  });
 });

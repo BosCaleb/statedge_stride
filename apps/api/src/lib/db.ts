@@ -7,7 +7,8 @@ import sql from 'mssql';
 //
 // Two narrower helpers exist for the moments before the organisation is known: withIdentity
 // (resolve the coach for a verified token) and withInviteToken (accept an invite). withoutOrg
-// reads the tables that have no row-level security (shared_reports, device_profiles).
+// reads the tables that have no row-level security (shared_reports, device_profiles), and
+// withOrgDirectory lists the organisations (and nothing else) for the daily retention sweep.
 
 export type SqlType = sql.ISqlType | (() => sql.ISqlType);
 export type SqlParams = Record<string, readonly [SqlType, unknown]>;
@@ -90,20 +91,28 @@ interface Context {
   orgId: string | null;
   entraOid: string | null;
   inviteTokenHash: Buffer | null;
+  orgDirectory: boolean;
 }
 
-const NO_CONTEXT: Context = { orgId: null, entraOid: null, inviteTokenHash: null };
+const NO_CONTEXT: Context = {
+  orgId: null,
+  entraOid: null,
+  inviteTokenHash: null,
+  orgDirectory: false,
+};
 
 const SET_CONTEXT = `SET XACT_ABORT ON;
 EXEC sp_set_session_context @key = N'org_id', @value = @org_id;
 EXEC sp_set_session_context @key = N'entra_oid', @value = @entra_oid;
-EXEC sp_set_session_context @key = N'invite_token_hash', @value = @invite_token_hash;`;
+EXEC sp_set_session_context @key = N'invite_token_hash', @value = @invite_token_hash;
+EXEC sp_set_session_context @key = N'org_directory', @value = @org_directory;`;
 
 async function setContext(tx: sql.Transaction, c: Context): Promise<void> {
   await bind(new sql.Request(tx), {
     org_id: [sql.UniqueIdentifier, c.orgId],
     entra_oid: [sql.UniqueIdentifier, c.entraOid],
     invite_token_hash: [sql.VarBinary(32), c.inviteTokenHash],
+    org_directory: [sql.Bit, c.orgDirectory ? true : null],
   }).query(SET_CONTEXT);
 }
 
@@ -116,6 +125,8 @@ export interface Database {
     fn: (db: Db, enterOrg: (orgId: string) => Promise<void>) => Promise<T>,
   ): Promise<T>;
   withoutOrg<T>(fn: (db: Db) => Promise<T>): Promise<T>;
+  /** Reads stride.organisations across organisations (migration 002). For the retention sweep. */
+  withOrgDirectory<T>(fn: (db: Db) => Promise<T>): Promise<T>;
   /** The raw pool, for the migration runner and tests. Not for organisation data. */
   pool(): Promise<sql.ConnectionPool>;
   close(): Promise<void>;
@@ -165,9 +176,10 @@ export function createDatabase(settings: DbSettings): Database {
     withIdentity: (entraOid, fn) => run({ ...NO_CONTEXT, entraOid }, (db) => fn(db)),
     withInviteToken: (tokenHash, fn) =>
       run({ ...NO_CONTEXT, inviteTokenHash: tokenHash }, (db, tx) =>
-        fn(db, (orgId) => setContext(tx, { orgId, entraOid: null, inviteTokenHash: tokenHash })),
+        fn(db, (orgId) => setContext(tx, { ...NO_CONTEXT, orgId, inviteTokenHash: tokenHash })),
       ),
     withoutOrg: (fn) => run(NO_CONTEXT, (db) => fn(db)),
+    withOrgDirectory: (fn) => run({ ...NO_CONTEXT, orgDirectory: true }, (db) => fn(db)),
     pool,
     async close() {
       if (poolPromise) await (await poolPromise).close();
