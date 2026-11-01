@@ -33,17 +33,20 @@ pnpm dev
 
 Then open http://localhost:5173 and sign in as one of the seeded people.
 
+To click through the app with demo athletes, results, a report and a share link, run `pnpm demo` instead: see `docs/demo.md`.
+
 ## Commands
 
-| Command                                      | Does                                                                            |
-| -------------------------------------------- | ------------------------------------------------------------------------------- |
-| `pnpm dev`                                   | Web, API and (with Core Tools) Azurite                                          |
-| `pnpm test`                                  | Unit, fixture and contract tests                                                |
-| `pnpm test:db`                               | API tests against SQL Server in Docker                                          |
-| `pnpm e2e`                                   | Playwright smoke tests (build first with `pnpm --filter @stride/web build:e2e`) |
-| `pnpm lint`, `pnpm typecheck`                | ESLint, Prettier, Stylelint; TypeScript                                         |
-| `pnpm db:up`, `pnpm db:migrate`, `pnpm seed` | Local database                                                                  |
-| `pnpm create-org`                            | Create an organisation and its first admin invite                               |
-| `pnpm licences`                              | Licence allowlist check                                                         |
-| `pnpm openapi`                               | Regenerate `apps/api/openapi.json`                                              |
-| `pnpm fetch-models`                          | Download the pinned pose model and WASM runtime                                 |
+| Command                                      | Does                                                                               |
+| -------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `pnpm dev`                                   | Web, API and (with Core Tools) Azurite                                             |
+| `pnpm test`                                  | Unit, fixture and contract tests                                                   |
+| `pnpm test:db`                               | API tests against SQL Server in Docker                                             |
+| `pnpm e2e`                                   | Playwright smoke tests (build first with `pnpm --filter @stride/web build:e2e`)    |
+| `pnpm lint`, `pnpm typecheck`                | ESLint, Prettier, Stylelint; TypeScript                                            |
+| `pnpm db:up`, `pnpm db:migrate`, `pnpm seed` | Local database                                                                     |
+| `pnpm demo`                                  | Local database with the demo profile, the pose model and `pnpm dev` (docs/demo.md) |
+| `pnpm create-org`                            | Create an organisation and its first admin invite                                  |
+| `pnpm licences`                              | Licence allowlist check                                                            |
+| `pnpm openapi`                               | Regenerate `apps/api/openapi.json`                                                 |
+| `pnpm fetch-models`                          | Download the pinned pose model and WASM runtime                                    |
