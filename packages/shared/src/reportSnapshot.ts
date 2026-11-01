@@ -41,8 +41,10 @@ export const reportAnalysisSchema = z.object({
   createdAt: z.iso.datetime(),
   algorithmVersion: z.string().min(1).max(30),
   gateStatus: savedGateStatusSchema,
-  /** The metrics shown, each with its confidence label. */
+  /** The metrics shown, each with its confidence label: the primary ones first. */
   metrics: z.array(metricResultSchema).max(40),
+  /** Which of the shown metrics are primary for the mode; the rest are secondary. */
+  primary: z.array(metricIdSchema).max(40),
   /** Metrics not shown, each listed once under "Not measured in this clip" with its reasons. */
   hidden: z
     .array(z.object({ id: metricIdSchema, reasons: z.array(reasonCodeSchema).max(20) }))

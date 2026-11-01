@@ -1,9 +1,10 @@
-// Downloads the pinned pose models and copies the MediaPipe WASM runtime into
-// apps/web/public/models, so that the app self-hosts every model file. Versions and SHA-256
-// checksums are pinned in apps/web/src/analysis-runtime/models.json; a mismatch fails the script.
+// Downloads the pinned models and copies the MediaPipe WASM runtime into apps/web/public/models,
+// so that the app self-hosts every model file. Versions and SHA-256 checksums are pinned in
+// apps/web/src/analysis-runtime/models.json; a mismatch fails the script.
 //
-//   pnpm fetch-models            the default model (full) and the WASM runtime
-//   pnpm fetch-models --heavy    also the heavy model
+//   pnpm fetch-models            the pose models (full and heavy), the runner detector and the
+//                                WASM runtime
+//   pnpm fetch-models --no-heavy all but the heavy pose model (30 MB), when it is not needed
 
 import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
@@ -22,6 +23,7 @@ interface Manifest {
   tasksVisionVersion: string;
   wasmDir: string;
   models: Record<string, ModelEntry>;
+  detector: ModelEntry;
 }
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -81,9 +83,10 @@ async function copyWasm(): Promise<void> {
 
 await mkdir(outDir, { recursive: true });
 await copyWasm();
-const wanted = process.argv.includes('--heavy') ? ['full', 'heavy'] : ['full'];
+const wanted = process.argv.includes('--no-heavy') ? ['full'] : ['full', 'heavy'];
 for (const name of wanted) {
   const entry = manifest.models[name];
   if (!entry) throw new Error(`unknown model ${name}`);
   await fetchModel(name, entry);
 }
+await fetchModel('detector', manifest.detector);

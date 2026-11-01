@@ -1,0 +1,102 @@
+/* The report builder, a saved report and its share link. */
+
+.header {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+.header h1 {
+  margin: 0;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.frameGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.frameChoice {
+  position: relative;
+  display: grid;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: var(--space-2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-small);
+  background: var(--surface-raised);
+  font-size: var(--text-small);
+  cursor: pointer;
+}
+
+.frameChoice:has(input:checked) {
+  border-color: var(--color-orange);
+}
+
+.frameChoice:has(input:disabled) {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.frameChoice input {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  width: 22px;
+  height: 22px;
+}
+
+.frameImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-small);
+}
+
+.order {
+  display: inline-grid;
+  min-width: 1.5rem;
+  margin-right: var(--space-1);
+  place-items: center;
+  border-radius: 999px;
+  background: var(--color-orange);
+  color: var(--color-navy);
+}
+
+.picker,
+.addFrame,
+.link {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--card-bar);
+  border-radius: var(--radius-small);
+  background: var(--surface-raised);
+}

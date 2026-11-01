@@ -1,11 +1,12 @@
 import { defaultConfig } from '@stride/analysis/config';
 import type { DeviceCheckPost } from '@stride/shared/api/devices';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { readClipFacts, type ClipFacts } from '../../analysis-runtime/clipFacts';
 import { webCodecsSupported } from '../../analysis-runtime/decoder';
 import { FrameGrabber } from '../../analysis-runtime/frameGrab';
 import type { ProbeError } from '../../analysis-runtime/probe';
+import { timeHeavyModel } from '../../analysis-runtime/runnerAssist';
 import shell from '../../app/shell.module.css';
 import badge from '../../components/badge.module.css';
 import { ClipInfoCard } from '../../components/ClipInfoCard';
@@ -15,7 +16,9 @@ import { LoadingState } from '../../components/States';
 import ui from '../../components/ui.module.css';
 import { useApi } from '../../lib/apiContext';
 import { useOutbox } from '../../lib/outbox/OutboxProvider';
+import { chosenPoseModel, readPoseTiming, writePoseTiming } from '../../lib/poseModelChoice';
 import { strings } from '../../lib/strings';
+import { thisPhoneFamily, trackEvent } from '../../lib/telemetry';
 import { GateChecksList } from '../analyse/GateChecksList';
 import { FPS_CHOICES } from '../import/importLogic';
 import {
@@ -99,6 +102,15 @@ export function DeviceCheckPage() {
           defaultConfig,
         )
       : null;
+
+  // One device_check event per clip checked: the result only.
+  const reportedFor = useRef<Checked | null>(null);
+  const result = outcome?.result;
+  useEffect(() => {
+    if (checked?.kind !== 'done' || !result || reportedFor.current === checked) return;
+    reportedFor.current = checked;
+    trackEvent({ name: 'device_check', result, phoneFamily: thisPhoneFamily() });
+  }, [checked, result]);
 
   const record = async () => {
     if (checked?.kind !== 'done' || !outcome) return;
@@ -214,6 +226,14 @@ export function DeviceCheckPage() {
             <p className={ui.notice}>{strings.device.retimed(declaredFps)}</p>
           ) : null}
           <GateChecksList checks={outcome.checks.filter((c) => c.level !== 'pass')} />
+          {checked.decodable ? (
+            <PoseModelTest
+              file={checked.file}
+              times={checked.facts.probe.containerTimesSec}
+              size={{ width: checked.facts.probe.widthPx, height: checked.facts.probe.heightPx }}
+              fps={declaredFps}
+            />
+          ) : null}
           <div className={form.actions}>
             <button
               type="button"
@@ -259,5 +279,68 @@ export function DeviceCheckPage() {
         )}
       </section>
     </div>
+  );
+}
+
+/**
+ * Times the detailed (heavy) pose model on frames of the test clip and keeps the result on the
+ * phone: the phone then uses the heavy model for analysis when it is fast enough.
+ */
+function PoseModelTest({
+  file,
+  times,
+  size,
+  fps,
+}: {
+  file: File;
+  times: Float64Array;
+  size: { width: number; height: number };
+  fps: number;
+}) {
+  const [state, setState] = useState<'idle' | 'testing' | 'failed'>('idle');
+  const [timing, setTiming] = useState(readPoseTiming);
+  const run = async () => {
+    setState('testing');
+    try {
+      const measured = await timeHeavyModel(file, times, size, fps);
+      const next = {
+        heavyMsPerFrame: measured.msPerFrame,
+        delegate: measured.delegate,
+        measuredAt: new Date().toISOString(),
+      };
+      writePoseTiming(next);
+      setTiming(next);
+      setState('idle');
+    } catch {
+      setState('failed');
+    }
+  };
+  const ms = timing ? Math.round(timing.heavyMsPerFrame) : null;
+  return (
+    <section className={styles.pose} aria-labelledby="pose-heading">
+      <h3 id="pose-heading">{strings.device.poseTitle}</h3>
+      <p className={form.hint}>{strings.device.poseIntro}</p>
+      <p role="status">
+        {state === 'testing'
+          ? strings.device.poseTesting
+          : state === 'failed'
+            ? strings.device.poseFailed
+            : ms === null
+              ? strings.device.poseNotTested
+              : chosenPoseModel() === 'heavy'
+                ? strings.device.poseHeavy(ms)
+                : strings.device.poseFull(ms)}
+      </p>
+      <div className={form.actions}>
+        <button
+          type="button"
+          className={`${ui.button} ${ui.secondary}`}
+          disabled={state === 'testing'}
+          onClick={() => void run()}
+        >
+          {strings.device.poseTest}
+        </button>
+      </div>
+    </section>
   );
 }

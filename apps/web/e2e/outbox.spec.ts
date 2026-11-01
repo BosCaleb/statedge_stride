@@ -34,6 +34,10 @@ test.describe('outbox', () => {
     await expect(
       page.getByRole('button', { name: /Sync status: Offline, 3 waiting/ }),
     ).toBeVisible();
+    // The longer pill wraps rather than pushing the header, and the page, wider than the phone.
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+    ).toBeLessThanOrEqual(0);
     expect(api.athletes.size).toBe(1);
 
     api.offline = false;

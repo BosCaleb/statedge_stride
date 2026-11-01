@@ -3,10 +3,13 @@
 // esbuild watch and Azurite; otherwise it serves the same handlers with a small Node server
 // (apps/api/src/dev/localServer.ts), which runs everything except timer functions.
 // SQL Server comes from `pnpm db:up`, then `pnpm db:migrate` and `pnpm seed`.
+// In the demo container (docker-compose.yml, profile "demo"), STRIDE_DEV_HOST=0.0.0.0 makes the web
+// server listen beyond the container; the API's settings come from the container's environment.
 
-import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { copyFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import spawn from 'cross-spawn';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const api = `${root}apps/api`;
@@ -24,18 +27,24 @@ function run(
   cwd = root,
   env: NodeJS.ProcessEnv = {},
 ): void {
+  // Resolve Windows .cmd shims and quote arguments (including paths with spaces).
   const child = spawn(command, args, {
     cwd,
     env: { ...process.env, ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
   });
   const prefix = `[${name}] `;
   const relay = (stream: NodeJS.WritableStream) => (chunk: Buffer) => {
     for (const line of chunk.toString().split('\n'))
       if (line.trim()) stream.write(prefix + line + '\n');
   };
-  child.stdout.on('data', relay(process.stdout));
-  child.stderr.on('data', relay(process.stderr));
+  child.stdout?.on('data', relay(process.stdout));
+  child.stderr?.on('data', relay(process.stderr));
+  child.on('error', (error) => {
+    console.error(`${prefix}could not start ${command}: ${error.message}`);
+    shutdown(1);
+  });
   child.on('exit', (code) => {
     console.log(`${prefix}exited with ${code ?? 'a signal'}`);
     shutdown(code ?? 1);
@@ -50,7 +59,8 @@ function shutdown(code: number): never {
 process.on('SIGINT', () => shutdown(0));
 process.on('SIGTERM', () => shutdown(0));
 
-const hasFunc = spawnSync('func', ['--version'], { stdio: 'ignore' }).status === 0;
+const hasFunc =
+  spawn.sync('func', ['--version'], { stdio: 'ignore', windowsHide: true }).status === 0;
 if (hasFunc) {
   run(
     'azurite',
@@ -66,4 +76,10 @@ if (hasFunc) {
   );
   run('api', 'pnpm', ['exec', 'tsx', 'watch', 'src/dev/localServer.ts'], api);
 }
-run('web', 'pnpm', ['exec', 'vite', '--port', '5173', '--strictPort'], `${root}apps/web`);
+const host = process.env.STRIDE_DEV_HOST;
+run(
+  'web',
+  'pnpm',
+  ['exec', 'vite', '--port', '5173', '--strictPort', ...(host ? ['--host', host] : [])],
+  `${root}apps/web`,
+);

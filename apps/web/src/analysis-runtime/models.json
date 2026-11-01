@@ -14,5 +14,11 @@
       "sha256": "64437af838a65d18e5ba7a0d39b465540069bc8aae8308de3e318aad31fcbc7b",
       "bytes": 30664242
     }
+  },
+  "detector": {
+    "file": "efficientdet_lite0-int8-v1.tflite",
+    "url": "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/efficientdet_lite0.tflite",
+    "sha256": "0720bf247bd76e6594ea28fa9c6f7c5242be774818997dbbeffc4da460c723bb",
+    "bytes": 4602795
   }
 }

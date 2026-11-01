@@ -1,16 +1,12 @@
 import type { ReactNode } from 'react';
 import { strings } from '../lib/strings';
 import ui from './ui.module.css';
+import { StatEdgeLoader } from './StatEdgeLoader';
 
 // Every list and screen has loading, empty and error states.
 
 export function LoadingState({ label = strings.errors.loading }: { label?: string }) {
-  return (
-    <div className={ui.state} role="status" aria-live="polite">
-      <div className={ui.spinner} aria-hidden="true" />
-      <p className={ui.stateBody}>{label}</p>
-    </div>
-  );
+  return <StatEdgeLoader label={label} />;
 }
 
 export function EmptyState({

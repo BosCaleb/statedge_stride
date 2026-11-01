@@ -25,6 +25,17 @@ describe('probeClip', () => {
     },
   );
 
+  it('reads every frame and the duration of a fragmented file, whose header has neither', async () => {
+    const probe = await probeClip(clip('h264-240fps-fragmented.mp4'));
+    if (!probe.ok) throw new Error(probe.reason);
+    const p = probe.value;
+    expect(p.frameCount).toBe(120);
+    expect(p.containerTimesSec).toHaveLength(120);
+    expect(p.containerTimesSec[1]! - p.containerTimesSec[0]!).toBeCloseTo(1 / 240, 6);
+    expect(p.durationSec).toBeCloseTo(0.5, 2);
+    expect(p.description?.byteLength).toBeGreaterThan(8);
+  });
+
   it('reads VP9 and HEVC clips with their decoder configuration', async () => {
     for (const [name, prefix] of [
       ['vp9-240fps.mp4', /^vp09\./],

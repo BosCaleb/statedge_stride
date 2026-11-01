@@ -27,6 +27,27 @@ export const reportSchema = z.object({
 });
 export type Report = z.infer<typeof reportSchema>;
 
+/** One line of an athlete's reports, newest first (GET /v1/athletes/{id}/reports). */
+export const reportListItemSchema = reportSchema
+  .pick({
+    id: true,
+    title: true,
+    share: true,
+    createdAt: true,
+  })
+  .extend({
+    /** The analyses the report covers: one, or two for a comparison (earlier first). */
+    analysisIds: z.array(idSchema).min(1).max(2),
+    mode: reportSnapshotSchema.shape.session.shape.mode,
+    sessionDate: reportSnapshotSchema.shape.session.shape.date,
+  });
+export type ReportListItem = z.infer<typeof reportListItemSchema>;
+
+export const athleteReportsSchema = z.object({
+  items: z.array(reportListItemSchema).max(LIMITS.athleteReportList),
+});
+export type AthleteReports = z.infer<typeof athleteReportsSchema>;
+
 /** Path parameter of the frame routes. */
 export const frameOrdinalSchema = z.coerce.number().int().min(1).max(LIMITS.maxReportFrames);
 

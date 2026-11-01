@@ -1,7 +1,8 @@
 import '../lib/zodSetup';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Outlet } from 'react-router';
+import { Outlet, useMatches, useNavigation } from 'react-router';
+import { StatEdgeLoader } from '../components/StatEdgeLoader';
 import { ApiProvider, createQueryClient, QUERY_CACHE_MAX_AGE_MS } from '../lib/apiContext';
 import { FakeAuthProvider } from '../lib/auth/fakeAuth';
 import { useAuth } from '../lib/auth/authContext';
@@ -33,6 +34,27 @@ function Auth({ children }: { children: ReactNode }) {
 }
 
 const persister = idbPersister();
+
+/** Auth and other bare routes have no AppShell to show a pending navigation. */
+function RootOutlet() {
+  const navigation = useNavigation();
+  const hasShell = useMatches().some(
+    ({ handle }) =>
+      typeof handle === 'object' &&
+      handle !== null &&
+      'appShell' in handle &&
+      handle.appShell === true,
+  );
+  const loading = !hasShell && navigation.state !== 'idle';
+  return (
+    <>
+      {loading ? <StatEdgeLoader variant="screen" /> : null}
+      <div hidden={loading}>
+        <Outlet />
+      </div>
+    </>
+  );
+}
 
 /** Finishes a sign-out whose wipe was interrupted (the app closed or reloaded during it). */
 function FinishSignOut() {
@@ -74,7 +96,7 @@ export function AppRoot() {
         >
           <OutboxProvider>
             <FinishSignOut />
-            <Outlet />
+            <RootOutlet />
             <UpdatePrompt />
             <CapabilityNotice />
           </OutboxProvider>

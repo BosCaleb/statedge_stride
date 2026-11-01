@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 import type { Page, Route } from '@playwright/test';
 import { readSkp1Header } from '@stride/analysis/skp1';
@@ -13,6 +13,7 @@ import type {
 import type { Athlete, Consent } from '@stride/shared/api/athletes';
 import type { DeviceCheckPost } from '@stride/shared/api/devices';
 import type { AuditEntry, Member } from '@stride/shared/api/org';
+import type { ReportPut } from '@stride/shared/api/reports';
 import type {
   Calibration,
   CalibrationPut,
@@ -29,6 +30,7 @@ import {
 import { consentRuleProblem, isMinor } from '@stride/shared/consent';
 import { DEV_IDENTITIES, DEV_ORGS } from '@stride/shared/devIdentities';
 import type { AuditAction } from '@stride/shared/enums';
+import { shortDisplayName, type ReportSnapshot } from '@stride/shared/reportSnapshot';
 import type { z } from 'zod';
 
 // An in-memory stand-in for the API, enough for the flows under test. Every request body is
@@ -53,6 +55,24 @@ class Problem extends Error {
   ) {
     super(code);
   }
+}
+
+interface StoredReport {
+  org: OrgKey;
+  athleteId: string;
+  snapshot: ReportSnapshot;
+  frames: Map<number, Buffer>;
+  createdBy: string;
+  createdAt: string;
+}
+
+interface StoredShare {
+  reportId: string;
+  org: OrgKey;
+  snapshot: ReportSnapshot;
+  frames: Map<number, Buffer>;
+  createdAt: string;
+  expiresAt: string;
 }
 
 interface Invite {
@@ -95,6 +115,9 @@ export class StubApi {
   readonly clips = new Map<string, Clip & { org: OrgKey }>();
   readonly analyses = new Map<string, StoredAnalysis>();
   readonly notes = new Map<string, Note & { org: OrgKey }>();
+  readonly reports = new Map<string, StoredReport>();
+  /** Public copies by token (the real API keeps only the token's hash). */
+  readonly shares = new Map<string, StoredShare>();
   /** The body of each immutable write, to tell a repeat from a conflicting write. */
   private writes = new Map<string, { org: OrgKey | null; json: string }>();
   private failures: { route: RouteName; status: number; code: string }[] = [];
@@ -138,24 +161,29 @@ export class StubApi {
       createdAt: new Date().toISOString(),
       consents: { analysis: null, sharing: null, clip_storage: null },
     });
-    if (consent) {
-      const consentId = randomUUID();
-      this.consents.set(consentId, {
-        id: consentId,
-        org,
-        athleteId: id,
-        purpose: 'analysis',
-        givenBy: 'athlete',
-        givenByName: `${athlete.firstName} ${athlete.lastName}`,
-        relationship: null,
-        evidence: 'verbal',
-        givenOn: '2026-03-01',
-        recordedBy: this.coaches.find((c) => c.org === org)?.id ?? '',
-        recordedAt: new Date().toISOString(),
-        withdrawnAt: null,
-      });
-    }
+    if (consent) this.grantConsent(id, 'analysis');
     return id;
+  }
+
+  /** Records an adult athlete's own verbal consent for a purpose. */
+  grantConsent(athleteId: string, purpose: Consent['purpose']): void {
+    const athlete = this.athletes.get(athleteId);
+    if (!athlete) throw new Error(`athlete ${athleteId} is not seeded`);
+    const consentId = randomUUID();
+    this.consents.set(consentId, {
+      id: consentId,
+      org: athlete.org,
+      athleteId,
+      purpose,
+      givenBy: 'athlete',
+      givenByName: `${athlete.firstName} ${athlete.lastName}`,
+      relationship: null,
+      evidence: 'verbal',
+      givenOn: '2026-03-01',
+      recordedBy: this.coaches.find((c) => c.org === athlete.org)?.id ?? '',
+      recordedAt: new Date().toISOString(),
+      withdrawnAt: null,
+    });
   }
 
   /**
@@ -425,6 +453,52 @@ export class StubApi {
       if (other.summary.supersededBy === id) other.summary.supersededBy = null;
     this.analyses.delete(id);
     this.writes.delete(`analysis:${id}`);
+  }
+
+  private reportIn(org: OrgKey | null, id: string): StoredReport {
+    const r = this.reports.get(id);
+    if (!r || r.org !== org) throw new Problem(404, 'not_found');
+    return r;
+  }
+
+  private activeShare(reportId: string): { createdAt: string; expiresAt: string } | null {
+    const share = [...this.shares.values()].find(
+      (s) => s.reportId === reportId && Date.parse(s.expiresAt) > Date.now(),
+    );
+    return share ? { createdAt: share.createdAt, expiresAt: share.expiresAt } : null;
+  }
+
+  private reportBody(id: string) {
+    const r = this.reports.get(id);
+    if (!r) throw new Problem(404, 'not_found');
+    return {
+      id,
+      athleteId: r.athleteId,
+      title: r.snapshot.title,
+      snapshot: r.snapshot,
+      frameOrdinals: [...r.frames.keys()].sort((x, y) => x - y),
+      share: this.activeShare(id),
+      createdBy: r.createdBy,
+      createdAt: r.createdAt,
+    };
+  }
+
+  /** Deletes the report's public copy. Returns whether there was one. */
+  private dropShares(reportId: string): boolean {
+    let dropped = false;
+    for (const [token, s] of this.shares)
+      if (s.reportId === reportId) {
+        this.shares.delete(token);
+        dropped = true;
+      }
+    return dropped;
+  }
+
+  /** Expired, revoked and unknown tokens answer alike. */
+  private liveShare(token: string): StoredShare {
+    const share = this.shares.get(token);
+    if (!share || Date.parse(share.expiresAt) <= Date.now()) throw new Problem(404, 'not_found');
+    return share;
   }
 
   private reply(name: RouteName, c: Call): Reply {
@@ -852,6 +926,103 @@ export class StubApi {
         if (!note || note.org !== org) throw new Problem(404, 'not_found');
         this.notes.delete(note.id);
         return {};
+      }
+      case 'putReport': {
+        const body = c.body as ReportPut;
+        const id = c.params.id ?? '';
+        const existing = this.reports.get(id);
+        if (existing && (existing.org !== org || existing.athleteId !== body.athleteId))
+          throw new Problem(409, 'conflict');
+        inOrg(body.athleteId);
+        for (const a of body.snapshot.analyses) {
+          const stored = this.analyses.get(a.id);
+          if (!stored || stored.org !== org || stored.summary.athleteId !== body.athleteId)
+            throw new Problem(400, 'validation');
+        }
+        this.reports.set(id, {
+          org: org ?? 'a',
+          athleteId: body.athleteId,
+          snapshot: body.snapshot,
+          frames: existing?.frames ?? new Map<number, Buffer>(),
+          createdBy: existing?.createdBy ?? coachId ?? '',
+          createdAt: existing?.createdAt ?? new Date().toISOString(),
+        });
+        if (!existing) this.record(org ?? 'a', coachId, 'report.create', id);
+        return { status: existing ? 200 : 201, body: this.reportBody(id) };
+      }
+      case 'putReportFrame': {
+        const r = this.reportIn(org, c.params.id ?? '');
+        const ordinal = Number(c.params.ordinal);
+        const bytes = c.body as Buffer;
+        if (!r.snapshot.frames.some((f) => f.ordinal === ordinal) || bytes[0] !== 0xff)
+          throw new Problem(400, 'validation');
+        const created = !r.frames.has(ordinal);
+        r.frames.set(ordinal, bytes);
+        return { status: created ? 201 : 200, body: { bytes: bytes.byteLength } };
+      }
+      case 'getReport':
+        this.reportIn(org, c.params.id ?? '');
+        return { body: this.reportBody(c.params.id ?? '') };
+      case 'listAthleteReports': {
+        const athlete = inOrg(c.params.id ?? '');
+        const items = [...this.reports.entries()]
+          .filter(([, r]) => r.org === org && r.athleteId === athlete.id)
+          .sort(([, x], [, y]) => y.createdAt.localeCompare(x.createdAt))
+          .map(([id, r]) => ({
+            id,
+            title: r.snapshot.title,
+            share: this.activeShare(id),
+            createdAt: r.createdAt,
+            analysisIds: r.snapshot.analyses.map((a) => a.id),
+            mode: r.snapshot.session.mode,
+            sessionDate: r.snapshot.session.date,
+          }));
+        return { body: { items } };
+      }
+      case 'createShare': {
+        const id = c.params.id ?? '';
+        const r = this.reportIn(org, id);
+        const athlete = inOrg(r.athleteId);
+        const consent = this.summary(athlete.id).sharing;
+        if (!consent) throw new Problem(422, 'consent_required');
+        if (r.snapshot.frames.some((f) => !r.frames.has(f.ordinal)))
+          throw new Problem(400, 'validation');
+        this.dropShares(id);
+        const days = (c.body as { expiresInDays: number }).expiresInDays;
+        const token = randomBytes(32).toString('base64url');
+        const now = new Date();
+        const expiresAt = new Date(Math.floor(now.getTime() / 1000) * 1000 + days * 86_400_000);
+        this.shares.set(token, {
+          reportId: id,
+          org: r.org,
+          snapshot: {
+            ...r.snapshot,
+            athleteDisplayName: shortDisplayName(athlete.firstName, athlete.lastName),
+          },
+          frames: new Map(r.frames),
+          createdAt: now.toISOString(),
+          expiresAt: expiresAt.toISOString(),
+        });
+        this.record(r.org, coachId, 'share.create', id);
+        return {
+          status: 201,
+          body: { url: `${WEB_ORIGIN}/r/${token}`, expiresAt: expiresAt.toISOString() },
+        };
+      }
+      case 'revokeShare': {
+        const id = c.params.id ?? '';
+        const r = this.reportIn(org, id);
+        if (this.dropShares(id)) this.record(r.org, coachId, 'share.revoke', id);
+        return {};
+      }
+      case 'publicReport': {
+        const share = this.liveShare(c.params.token ?? '');
+        return { body: { snapshot: share.snapshot, expiresAt: share.expiresAt } };
+      }
+      case 'publicReportFrame': {
+        const frame = this.liveShare(c.params.token ?? '').frames.get(Number(c.params.ordinal));
+        if (!frame) throw new Problem(404, 'not_found');
+        return { bytes: frame };
       }
       case 'postDeviceCheck': {
         const body = c.body as DeviceCheckPost;

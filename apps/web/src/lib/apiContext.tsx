@@ -3,6 +3,7 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { ApiProblem, createApiClient, NetworkError, type ApiCall } from './api';
 import { useAuth } from './auth/authContext';
 import { config } from './config';
+import { trackFailedApiCall } from './telemetry';
 
 // The API client for the signed-in coach, and the query client. Queries keep working from the
 // cache while offline (networkMode offlineFirst), so the analysis loop never waits on the API.
@@ -16,7 +17,10 @@ const ApiContext = createContext<ApiCall | null>(null);
 
 export function ApiProvider({ children }: { children: ReactNode }) {
   const { getToken } = useAuth();
-  const call = useMemo(() => createApiClient({ baseUrl: config.apiBaseUrl, getToken }), [getToken]);
+  const call = useMemo(
+    () => createApiClient({ baseUrl: config.apiBaseUrl, getToken, onFailure: trackFailedApiCall }),
+    [getToken],
+  );
   return <ApiContext.Provider value={call}>{children}</ApiContext.Provider>;
 }
 

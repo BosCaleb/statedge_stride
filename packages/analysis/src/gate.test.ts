@@ -131,11 +131,31 @@ const resultCases: Record<string, Case<ResultCheckInput>[]> = {
     ['all agree', {}, 'pass'],
     ['half agree', { agreementShare: 0.5 }, 'warn'],
   ],
+  steps_reliable: [
+    ['clear steps', {}, 'pass'],
+    [
+      'unclear steps at a plausible cadence',
+      { agreementShare: 0, alternationBreakShare: 0.25 },
+      'pass',
+    ],
+    [
+      'unclear steps at an impossible cadence',
+      { agreementShare: 0, alternationBreakShare: 0.25, cadenceSpm: 1108 },
+      'fail',
+    ],
+    ['clear steps at an impossible cadence', { cadenceSpm: 1108 }, 'pass'],
+    ['only disagreeing methods', { agreementShare: 0, cadenceSpm: 1108 }, 'pass'],
+  ],
   timebase_plausible: [
     ['180 spm', {}, 'pass'],
     ['not measured', { cadenceSpm: null }, 'pass'],
     ['Super slow-mo (45 spm)', { cadenceSpm: 45 }, 'fail'],
     ['re-timed file (720 spm)', { cadenceSpm: 720 }, 'fail'],
+    [
+      'impossible cadence from unclear steps',
+      { agreementShare: 0, alternationBreakShare: 0.25, cadenceSpm: 1108 },
+      'pass',
+    ],
   ],
   side_labels: [
     ['match', {}, 'pass'],

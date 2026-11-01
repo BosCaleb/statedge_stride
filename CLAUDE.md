@@ -12,7 +12,7 @@ Entra External ID, MediaPipe Pose Landmarker, pnpm monorepo.
 ## Layout
 
 apps/web, apps/api, packages/shared (zod schemas), packages/analysis (pure TS).
-fixtures/ holds keypoint files (never video of identifiable people). scripts/ holds create-org,
+fixtures/ holds keypoint files (never video of identifiable people). scripts/ holds create-org, invite-admin, revoke-link,
 seed, db-migrate, fetch-models, licence and OpenAPI tools. infra/ holds the Bicep templates and
 infra/deploy.sh, which deploys an environment and configures its GitHub environment.
 

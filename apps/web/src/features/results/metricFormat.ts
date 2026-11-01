@@ -2,28 +2,8 @@ import { GATE_EFFECTS } from '@stride/analysis/gate';
 import type { AnalysisResult, MetricResult } from '@stride/shared/analysisResult';
 import type { Confidence, GateCheckId, MetricId } from '@stride/shared/enums';
 
-// How metrics are shown: rounding (spec: cadence and times to whole numbers, angles to 0.1
-// degrees, lengths to 0.01 m, percentages to 0.1), grouping by mode, and which warnings hid or
-// lowered which metric.
-
-const DECIMALS: Record<string, number> = {
-  spm: 0,
-  ms: 0,
-  deg: 1,
-  m: 2,
-  'm/s': 2,
-  Hz: 2,
-  '%': 1,
-  '%L': 1,
-  cm: 1,
-};
-
-export function formatValue(value: number | null | undefined, unit: string): string {
-  if (value === null || value === undefined || !Number.isFinite(value)) return '–';
-  const fixed = value.toFixed(DECIMALS[unit] ?? 1);
-  // No "-0.0".
-  return Number(fixed) === 0 ? (0).toFixed(DECIMALS[unit] ?? 1) : fixed;
-}
+// How metrics are shown: grouping by mode, and which warnings hid or lowered which metric.
+// Rounding is in valueFormat.ts, which the report PDF and the public report also use.
 
 const RANK: Record<Confidence, number> = { high: 0, medium: 1, low: 2, unavailable: 3 };
 

@@ -1,0 +1,14 @@
+# Kept out of the demo image: build output, installed packages (the image installs its own, for
+# Linux) and anything local to one computer.
+**/node_modules
+**/dist
+**/dist-*
+**/test-results
+**/playwright-report
+**/coverage
+.git
+.azurite
+apps/api/local.settings.json
+apps/web/public/models/*
+!apps/web/public/models/README.md
+**/*.log

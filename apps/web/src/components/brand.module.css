@@ -1,0 +1,51 @@
+.brand {
+  display: inline-flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.brand > svg {
+  flex: none;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: var(--text-large);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.product {
+  color: var(--color-orange);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.header .name {
+  color: var(--color-white);
+}
+
+.auth .name {
+  color: var(--heading);
+  font-size: 1.75rem;
+}
+
+.auth .product {
+  font-size: 0.875rem;
+}
+
+/* Small phones: a tighter header so the sync pill keeps to two lines. */
+@media (width <= 380px) {
+  .header {
+    gap: var(--space-2);
+  }
+}

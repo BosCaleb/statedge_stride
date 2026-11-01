@@ -1,23 +1,9 @@
 import type { MetricResult } from '@stride/shared/analysisResult';
-import type { ReasonCode } from '@stride/shared/enums';
 import { useId, useState } from 'react';
-import { formatValue } from '../features/results/metricFormat';
+import { formatValue, reasonText, unitLabel } from '../features/results/valueFormat';
 import { strings } from '../lib/strings';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import styles from './metrics.module.css';
-
-export function unitLabel(unit: string): string {
-  return (strings.metrics.units as Record<string, string>)[unit] ?? unit;
-}
-
-/** A reason code in the coach's words (gate:<check> uses that check's message). */
-export function reasonText(code: ReasonCode): string {
-  if (code.startsWith('gate:')) {
-    const check = code.slice(5) as keyof typeof strings.gate.checks;
-    return strings.gate.checks[check].message;
-  }
-  return strings.metrics.reasons[code as keyof typeof strings.metrics.reasons];
-}
 
 /**
  * One measurement: value and unit, left and right where it has sides, the confidence label, a

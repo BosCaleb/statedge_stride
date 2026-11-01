@@ -2,11 +2,12 @@ import { Component, useState, type ErrorInfo, type ReactNode } from 'react';
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router';
 import { strings } from '../lib/strings';
 import { supportCode } from '../lib/supportCode';
+import { trackError } from '../lib/telemetry';
 import ui from '../components/ui.module.css';
 import styles from './shell.module.css';
 
 // Errors show Reload and "Copy a support code", never details. The support code goes to the
-// console (and, from M6, to telemetry) so that StatEdge can match it to the error.
+// console and, with the error, to telemetry, so that StatEdge can match a coach's code to it.
 
 function CrashScreen({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -41,6 +42,7 @@ function CrashScreen({ code }: { code: string }) {
 function report(error: unknown): string {
   const code = supportCode();
   console.error(`support code ${code}`, error);
+  trackError(error, code);
   return code;
 }
 
@@ -53,7 +55,9 @@ export class AppErrorBoundary extends Component<{ children: ReactNode }, { code:
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error(`support code ${this.state.code ?? ''}`, error, info.componentStack);
+    const code = this.state.code ?? supportCode();
+    console.error(`support code ${code}`, error, info.componentStack);
+    trackError(error, code);
   }
 
   override render() {

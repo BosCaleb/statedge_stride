@@ -4,6 +4,9 @@ import { createFile, DataStream, Endianness, MP4BoxBuffer, type Movie, type Samp
 // Reads a clip's container metadata (codec, size, rotation, every frame timestamp) without
 // decoding any video. mp4box parses the moov box; when moov sits after the media data, as it
 // does in many phone recordings, mp4box asks for the moov position and the media is skipped.
+// A fragmented file (from the web, a screen recorder or some sharing apps) lists its frames in
+// moof boxes after moov and may give no duration in its header, so it is read to the end and
+// its duration comes from the frames.
 
 export interface ClipProbe {
   codec: string;
@@ -65,6 +68,20 @@ function decoderDescription(
   return null;
 }
 
+/** The header's duration, or the span of the frames when the header gives none. */
+function durationSec(
+  track: { duration: number; timescale: number },
+  info: Movie,
+  samples: readonly Sample[],
+): number {
+  if (track.timescale > 0 && track.duration > 0) return track.duration / track.timescale;
+  if (info.timescale > 0 && info.duration > 0) return info.duration / info.timescale;
+  if (samples.length === 0) return 0;
+  const start = Math.min(...samples.map((s) => s.cts / s.timescale));
+  const end = Math.max(...samples.map((s) => (s.cts + s.duration) / s.timescale));
+  return end - start;
+}
+
 export async function probeClip(file: Blob): Promise<Outcome<ClipProbe, ProbeError>> {
   const mp4 = createFile();
   let movie: Movie | null = null;
@@ -77,7 +94,8 @@ export async function probeClip(file: Blob): Promise<Outcome<ClipProbe, ProbeErr
   };
   try {
     let offset = 0;
-    while (movie === null && !failed && offset < file.size) {
+    const fragmented = () => movie?.isFragmented === true;
+    while ((movie === null || fragmented()) && !failed && offset < file.size) {
       const end = Math.min(file.size, offset + CHUNK_BYTES);
       const buffer = MP4BoxBuffer.fromArrayBuffer(
         await file.slice(offset, end).arrayBuffer(),
@@ -111,8 +129,7 @@ export async function probeClip(file: Blob): Promise<Outcome<ClipProbe, ProbeErr
       heightPx: swap ? codedWidth : codedHeight,
       rotation,
       frameCount: samples.length,
-      durationSec:
-        track.timescale > 0 ? track.duration / track.timescale : info.duration / info.timescale,
+      durationSec: durationSec(track, info, samples),
       containerTimesSec: Float64Array.from(times),
       timescale: track.timescale,
       trackId: track.id,

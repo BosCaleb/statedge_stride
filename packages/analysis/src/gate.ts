@@ -185,14 +185,32 @@ export function resultChecks(input: ResultCheckInput, g: GateConfig): GateCheck[
     ),
   );
 
+  // An impossible cadence means a wrong frame rate only when the steps themselves were found
+  // reliably. When the two methods disagree and the steps do not alternate, the steps are the
+  // problem (a small athlete, a hidden far leg), and blaming the frame rate would send the
+  // coach to the wrong setting.
   const cadence = input.cadenceSpm;
   const plausible =
     cadence === null || (cadence >= g.cadenceSpm.min && cadence <= g.cadenceSpm.max);
+  const stepsUnclear =
+    input.agreementShare < g.agreementWarnBelow &&
+    input.alternationBreakShare > g.events.alternateWarn;
+  checks.push(
+    check(
+      'steps_reliable',
+      !plausible && stepsUnclear ? 'fail' : 'pass',
+      `${pct(input.agreementShare)} agree, ${pct(input.alternationBreakShare)} out of order`,
+    ),
+  );
   checks.push(
     check(
       'timebase_plausible',
-      plausible ? 'pass' : 'fail',
-      cadence === null ? 'not measured' : `${cadence.toFixed(0)} spm`,
+      plausible || stepsUnclear ? 'pass' : 'fail',
+      cadence === null
+        ? 'not measured'
+        : plausible || !stepsUnclear
+          ? `${cadence.toFixed(0)} spm`
+          : `${cadence.toFixed(0)} spm, not judged: the steps were unclear`,
     ),
   );
 

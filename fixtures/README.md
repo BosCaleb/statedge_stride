@@ -45,6 +45,8 @@ Regenerate with `pnpm tsx scripts/generate-fixtures.ts`.
 ## Test clips (`clips/`)
 
 `clips/probe/` holds tiny synthetic test-pattern clips (no people) for the container probe
-tests: H.264 with the moov box before and after the media, VP9, HEVC, a re-timed 30 fps file and
-a rotated file. `clips/synthetic-run-240fps.mp4` and `clips/synthetic-calibration-240fps.mp4` are
+tests: H.264 with the moov box before and after the media, VP9, HEVC, a re-timed 30 fps file,
+a rotated file, and a fragmented file (`h264-240fps-fragmented.mp4`, made with
+`ffmpeg -i h264-240fps-faststart.mp4 -c copy -movflags frag_keyframe+empty_moov+default_base_moof`),
+whose header gives no duration and lists no frames, as in many files downloaded from the web. `clips/synthetic-run-240fps.mp4` and `clips/synthetic-calibration-240fps.mp4` are
 rendered stick-figure clips for the end-to-end tests. See `scripts/generate-test-clips.ts`.

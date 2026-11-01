@@ -242,9 +242,26 @@ class Job {
       );
     }
 
-    const estimator = await createEstimator(msg.estimator, config.roi.maxCropDrawPx);
+    let estimator = await createEstimator(msg.estimator, config.roi.maxCropDrawPx);
     try {
-      await estimator.init(signal);
+      try {
+        await estimator.init(signal);
+      } catch (error) {
+        // The heavy model is a 30 MB download that may not be on the phone yet (offline, or a
+        // failed fetch): fall back to the full model, which the result then names.
+        if (
+          signal.aborted ||
+          msg.estimator.kind !== 'mediapipe' ||
+          msg.estimator.variant === 'full'
+        )
+          throw error;
+        estimator.dispose();
+        estimator = await createEstimator(
+          { ...msg.estimator, variant: 'full' },
+          config.roi.maxCropDrawPx,
+        );
+        await estimator.init(signal);
+      }
     } catch (error) {
       estimator.dispose();
       this.external?.dispose();

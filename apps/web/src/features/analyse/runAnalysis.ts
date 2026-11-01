@@ -4,16 +4,18 @@ import type { Roi } from '@stride/analysis/types';
 import type { AnalysisResult } from '@stride/shared/analysisResult';
 import type { Mode } from '@stride/shared/enums';
 import type { QueryClient } from '@tanstack/react-query';
-import { FrameGrabber, frameJpeg } from '../../analysis-runtime/frameGrab';
+import { FrameGrabber } from '../../analysis-runtime/frameGrab';
 import { startAnalysisJob, type JobOutcome } from '../../analysis-runtime/jobRunner';
 import type { CalibrationInput, EstimatorSpec } from '../../analysis-runtime/messages';
 import { storeLocalResult } from '../../lib/local/localQueries';
 import type { LocalCalibration, LocalClip, LocalResult } from '../../lib/local/records';
 import { putThumbnail, type KeyFrameKind } from '../../lib/local/thumbnails';
+import { chosenPoseModel } from '../../lib/poseModelChoice';
 import { readPreference } from '../../lib/storage';
 import { strings } from '../../lib/strings';
+import { thisPhoneFamily, trackEvent } from '../../lib/telemetry';
 import { useJobStore } from '../../stores/jobStore';
-import { drawSkeleton } from '../results/skeleton';
+import { renderKeyFrame } from '../results/keyFrameImage';
 
 // Starting an analysis job and keeping what it produces. The job runs in a worker through
 // jobRunner; this module feeds it the clip, calibration and box, follows its progress in the
@@ -42,7 +44,7 @@ function estimator(): EstimatorSpec {
     if (readPreference(E2E_POSE_DELEGATE_PREF) === 'CPU')
       return { kind: 'mediapipe', variant: 'full', delegate: 'CPU' };
   }
-  return { kind: 'mediapipe', variant: 'full', delegate: 'GPU' };
+  return { kind: 'mediapipe', variant: chosenPoseModel(), delegate: 'GPU' };
 }
 
 export function calibrationInput(cal: LocalCalibration | null): CalibrationInput | null {
@@ -65,14 +67,6 @@ async function gzip(bytes: Uint8Array<ArrayBuffer>): Promise<Blob> {
   return new Response(stream).blob();
 }
 
-const SKELETON_STYLE = {
-  left: '#F47820',
-  right: '#1E4F8C',
-  centre: '#ffffff',
-  lineWidth: 6,
-  minVisibility: 0.3,
-};
-
 /** Key frames: the three moments of one well-detected stance, with the skeleton and a caption. */
 export async function makeKeyFrames(
   analysisId: string,
@@ -82,10 +76,6 @@ export async function makeKeyFrames(
 ): Promise<void> {
   const kf = result.keyFrames;
   if (!kf) return;
-  const times = keypoints.timesSec;
-  const first = times[0] ?? 0;
-  const size = { width: keypoints.header.widthPx, height: keypoints.header.heightPx };
-  const quarter = 0.25 / Math.max(1, result.captureFps);
   const grabber = new FrameGrabber(file);
   try {
     const frames: [KeyFrameKind, number][] = [
@@ -94,20 +84,8 @@ export async function makeKeyFrames(
       ['to', kf.toFrame],
     ];
     for (const [kind, index] of frames) {
-      const bitmap = await grabber.grab((times[index] ?? first) - first + quarter, size);
       const caption = strings.keyFrames.caption(kf.side, kind);
-      const jpeg = await frameJpeg(bitmap, size, (ctx, scale) => {
-        const landmarks = keypoints.frames[index];
-        if (landmarks) drawSkeleton(ctx, landmarks, scale, SKELETON_STYLE);
-        const w = size.width * scale;
-        const h = size.height * scale;
-        ctx.fillStyle = 'rgb(13 28 62 / 80%)';
-        ctx.fillRect(0, h - 56, w, 56);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '600 28px Inter, system-ui, sans-serif';
-        ctx.fillText(caption, 20, h - 18);
-      });
-      bitmap.close();
+      const jpeg = await renderKeyFrame(grabber, keypoints, result.captureFps, index, caption);
       await putThumbnail(analysisId, kind, jpeg);
     }
   } finally {
@@ -147,6 +125,24 @@ export async function keepResult(
   return record;
 }
 
+/** The analysis_completed or analysis_failed event: counts and codes, nothing about the athlete. */
+function reportOutcome(req: AnalyseRequest, outcome: JobOutcome): void {
+  if (outcome.kind === 'failed') {
+    if (outcome.code !== 'cancelled')
+      trackEvent({ name: 'analysis_failed', code: outcome.code, phoneFamily: thisPhoneFamily() });
+    return;
+  }
+  trackEvent({
+    name: 'analysis_completed',
+    mode: req.mode,
+    gateStatus: outcome.result.gate.status,
+    durationMs: Math.round(outcome.stats.wallMs),
+    frameCount: outcome.result.clip.frameCount,
+    fps: Math.round(outcome.result.captureFps),
+    phoneFamily: thisPhoneFamily(),
+  });
+}
+
 /** Starts the job and follows it to the end in the job store. */
 export function startJob(queryClient: QueryClient, req: AnalyseRequest): void {
   const store = useJobStore.getState();
@@ -169,6 +165,7 @@ export function startJob(queryClient: QueryClient, req: AnalyseRequest): void {
   store.begin(req.clip.id, handle);
   void handle.outcome.then(async (outcome) => {
     const { finish } = useJobStore.getState();
+    reportOutcome(req, outcome);
     if (outcome.kind === 'failed') {
       finish(req.clip.id, { kind: 'failed', code: outcome.code, detail: outcome.detail });
     } else if (outcome.result.gate.status === 'fail') {
@@ -178,6 +175,11 @@ export function startJob(queryClient: QueryClient, req: AnalyseRequest): void {
         const kept = await keepResult(queryClient, req, outcome);
         finish(req.clip.id, { kind: 'kept', resultId: kept.id });
       } catch (error) {
+        trackEvent({
+          name: 'analysis_failed',
+          code: 'out_of_memory',
+          phoneFamily: thisPhoneFamily(),
+        });
         finish(req.clip.id, {
           kind: 'failed',
           code: 'out_of_memory',

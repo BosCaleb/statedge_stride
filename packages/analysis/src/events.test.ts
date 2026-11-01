@@ -1,6 +1,7 @@
+import type { StanceEvent } from '@stride/shared/analysisResult';
 import { describe, expect, it } from 'vitest';
 import { defaultAnalysisConfig } from './config';
-import { findExtrema, fitGroundLine } from './events';
+import { dropDuplicateContacts, findExtrema, fitGroundLine } from './events';
 import { generateGait, SPRINT_GAIT } from './testing/syntheticGait';
 import { runSynthetic } from './testing/runSynthetic';
 
@@ -92,5 +93,90 @@ describe('findExtrema', () => {
     expect(peaks).toHaveLength(6);
     const troughs = findExtrema(series, times, 0.15, 5, 'min');
     expect(troughs).toHaveLength(6);
+  });
+});
+
+describe('dropDuplicateContacts', () => {
+  const at = (
+    side: 'left' | 'right',
+    frame: number,
+    agreement: StanceEvent['agreement'] = 'both',
+  ): StanceEvent => ({
+    side,
+    icFrame: frame,
+    toFrame: frame + 25,
+    icTimeSec: frame / 240,
+    toTimeSec: (frame + 25) / 240,
+    agreement,
+  });
+
+  it('keeps steps a real runner can take', () => {
+    // Sprinting at about 260 steps a minute: a contact every 55 frames at 240 fps.
+    const steps = [at('right', 20), at('left', 75), at('right', 130), at('left', 185)];
+    expect(dropDuplicateContacts(steps, 0.15, 0.5)).toEqual({ events: steps, dropped: 0 });
+  });
+
+  it('counts one landing seen as both feet once, keeping left and right alternating', () => {
+    // As in a small, side-on sprinter whose far leg is hidden: the right foot's landing at frame
+    // 59 is also seen as the left foot 14 frames later (58 ms).
+    const seen = [
+      at('left', 4, 'secondary-only'),
+      at('right', 59, 'secondary-only'),
+      at('left', 73, 'secondary-only'),
+      at('left', 114, 'secondary-only'),
+    ];
+    const { events, dropped } = dropDuplicateContacts(seen, 0.15, 0.5);
+    expect(dropped).toBe(1);
+    expect(events.map((e) => [e.side, e.icFrame])).toEqual([
+      ['left', 4],
+      ['right', 59],
+      ['left', 114],
+    ]);
+  });
+
+  it('finds landings seen twice even when they are half of the gaps', () => {
+    // The pattern of the clip that prompted this: two landings each seen as both feet.
+    const seen = [
+      at('right', 59, 'secondary-only'),
+      at('left', 73, 'secondary-only'),
+      at('right', 112, 'secondary-only'),
+      at('left', 124, 'secondary-only'),
+      at('left', 241, 'primary-only'),
+    ];
+    const { events, dropped } = dropDuplicateContacts(seen, 0.15, 0.5);
+    expect(dropped).toBe(2);
+    expect(events.map((e) => [e.side, e.icFrame])).toEqual([
+      ['right', 59],
+      ['left', 124],
+      ['left', 241],
+    ]);
+  });
+
+  it('keeps every contact when all of them are too close (a wrong frame rate)', () => {
+    // A 240 fps clip read as 960 fps: steps 55 frames apart look 14 frames apart.
+    const fast = [at('right', 0), at('left', 14), at('right', 28), at('left', 42), at('right', 56)];
+    expect(dropDuplicateContacts(fast, 0.15, 0.5)).toEqual({ events: fast, dropped: 0 });
+  });
+
+  it('prefers the contact both methods agree on', () => {
+    const { events } = dropDuplicateContacts(
+      [at('left', 10), at('right', 60, 'secondary-only'), at('right', 70, 'both'), at('left', 125)],
+      0.15,
+      0.5,
+    );
+    expect(events.map((e) => [e.side, e.icFrame, e.agreement])).toEqual([
+      ['left', 10, 'both'],
+      ['right', 70, 'both'],
+      ['left', 125, 'both'],
+    ]);
+  });
+
+  it('keeps the earlier contact when nothing tells them apart', () => {
+    const { events } = dropDuplicateContacts(
+      [at('right', 60), at('left', 70), at('right', 125), at('left', 180)],
+      0.15,
+      0.5,
+    );
+    expect(events.map((e) => e.icFrame)).toEqual([60, 125, 180]);
   });
 });

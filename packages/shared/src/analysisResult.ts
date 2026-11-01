@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { analysisConfigSchema } from './analysisConfig';
+import { configSnapshotSchema } from './analysisConfig';
 import {
   checkLevelSchema,
   confidenceSchema,
@@ -114,7 +114,7 @@ export const analysisResultSchema = z.object({
   keyFrames: keyFramesSchema.nullable(),
   metrics: z.array(metricResultSchema),
   gate: gateResultSchema,
-  configSnapshot: analysisConfigSchema,
+  configSnapshot: configSnapshotSchema,
   createdAt: z.iso.datetime(),
 });
 export type AnalysisResult = z.infer<typeof analysisResultSchema>;

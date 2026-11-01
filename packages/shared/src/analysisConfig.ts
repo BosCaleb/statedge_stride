@@ -72,6 +72,8 @@ export const analysisConfigSchema = z.object({
     stanceSpeedLegPerSec: z.number(),
     groundBandLeg: z.number(),
     minStanceMs: z.number(),
+    minStepMs: z.number(),
+    duplicateShareOfNeighbour: z.number(),
     maxStanceMs: z.number(),
     mergeGapFrames: z.number().int(),
     icToleranceMs: z.number(),
@@ -115,5 +117,36 @@ export const analysisConfigSchema = z.object({
   }),
   gate: gateConfigSchema,
   comparison: z.object({ sameScaleShare: z.number(), sameFrameRateShare: z.number() }),
+  runnerDetection: z.object({
+    samples: z.number().int().positive(),
+    minScore: z.number(),
+    minHeightShare: z.number(),
+    edgeMarginShare: z.number(),
+    staticIou: z.number(),
+    staticShare: z.number(),
+    padShare: z.number(),
+    nearLargestShare: z.number(),
+  }),
+  poseModel: z.object({
+    heavyMaxMsPerFrame: z.number(),
+    benchmarkFrames: z.number().int().positive(),
+  }),
 });
 export type AnalysisConfig = z.infer<typeof analysisConfigSchema>;
+
+/**
+ * The configuration as stored in a result (`configSnapshot`). A result keeps the configuration of
+ * the algorithm version that made it, so values added in later versions may be missing: the
+ * comparison thresholds (0.1.1), the duplicate-contact values (0.1.2), runner detection and the
+ * pose model choice (0.1.3).
+ */
+export const configSnapshotSchema = analysisConfigSchema.extend({
+  events: analysisConfigSchema.shape.events.partial({
+    minStepMs: true,
+    duplicateShareOfNeighbour: true,
+  }),
+  comparison: analysisConfigSchema.shape.comparison.optional(),
+  runnerDetection: analysisConfigSchema.shape.runnerDetection.optional(),
+  poseModel: analysisConfigSchema.shape.poseModel.optional(),
+});
+export type ConfigSnapshot = z.infer<typeof configSnapshotSchema>;

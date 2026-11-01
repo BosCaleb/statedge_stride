@@ -7,18 +7,20 @@ A web app for coaches to analyse running technique from phone slow-motion video.
 - Spike measurements (M0): [docs/spike-report.md](docs/spike-report.md)
 - Setting up, deploying and operating: [docs/runbook.md](docs/runbook.md)
 - Infrastructure: [infra/README.md](infra/README.md)
+- Deploying on Azure, with estimated costs: [docs/azure-deployment.md](docs/azure-deployment.md)
+- Outstanding and future features: [docs/roadmap.md](docs/roadmap.md)
 
 ## Layout
 
-| Path                | What                                                                                                 |
-| ------------------- | ---------------------------------------------------------------------------------------------------- |
-| `apps/web`          | React 18 + Vite installable PWA. `src/analysis-runtime` holds the decoder, pose estimator and worker |
-| `apps/api`          | Azure Functions (Node 22, v4 model). `migrations/` holds the numbered SQL files                      |
-| `packages/shared`   | zod schemas: API contract, analysis result, report snapshot, enums                                   |
-| `packages/analysis` | Pure TypeScript analysis engine: filters, events, metrics, confidence, gate                          |
-| `fixtures`          | Keypoint fixtures (never video of identifiable people) and tiny synthetic test clips                 |
-| `scripts`           | Staff and developer tools: migrate, create-org, seed, dev, licences, OpenAPI, models                 |
-| `infra`             | Bicep templates, environment settings and the deploy script                                          |
+| Path                | What                                                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `apps/web`          | React 18 + Vite installable PWA. `src/analysis-runtime` holds the decoder, pose estimator and worker            |
+| `apps/api`          | Azure Functions (Node 22, v4 model). `migrations/` holds the numbered SQL files                                 |
+| `packages/shared`   | zod schemas: API contract, analysis result, report snapshot, enums                                              |
+| `packages/analysis` | Pure TypeScript analysis engine: filters, events, metrics, confidence, gate                                     |
+| `fixtures`          | Keypoint fixtures (never video of identifiable people) and tiny synthetic test clips                            |
+| `scripts`           | Staff and developer tools: migrate, create-org, invite-admin, revoke-link, seed, dev, licences, OpenAPI, models |
+| `infra`             | Bicep templates, environment settings and the deploy script                                                     |
 
 ## Quick start
 
@@ -31,17 +33,22 @@ pnpm dev
 
 Then open http://localhost:5173 and sign in as one of the seeded people.
 
+To click through the app with demo athletes, results, a report and a share link, run `pnpm demo` instead, or with only Docker installed, `docker compose --profile demo up --build`: see `docs/demo.md`.
+
 ## Commands
 
-| Command                                      | Does                                                                            |
-| -------------------------------------------- | ------------------------------------------------------------------------------- |
-| `pnpm dev`                                   | Web, API and (with Core Tools) Azurite                                          |
-| `pnpm test`                                  | Unit, fixture and contract tests                                                |
-| `pnpm test:db`                               | API tests against SQL Server in Docker                                          |
-| `pnpm e2e`                                   | Playwright smoke tests (build first with `pnpm --filter @stride/web build:e2e`) |
-| `pnpm lint`, `pnpm typecheck`                | ESLint, Prettier, Stylelint; TypeScript                                         |
-| `pnpm db:up`, `pnpm db:migrate`, `pnpm seed` | Local database                                                                  |
-| `pnpm create-org`                            | Create an organisation and its first admin invite                               |
-| `pnpm licences`                              | Licence allowlist check                                                         |
-| `pnpm openapi`                               | Regenerate `apps/api/openapi.json`                                              |
-| `pnpm fetch-models`                          | Download the pinned pose model and WASM runtime                                 |
+| Command                                      | Does                                                                               |
+| -------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `pnpm dev`                                   | Web, API and (with Core Tools) Azurite                                             |
+| `pnpm test`                                  | Unit, fixture and contract tests                                                   |
+| `pnpm test:db`                               | API tests against SQL Server in Docker                                             |
+| `pnpm e2e`                                   | Playwright smoke tests (build first with `pnpm --filter @stride/web build:e2e`)    |
+| `pnpm lint`, `pnpm typecheck`                | ESLint, Prettier, Stylelint; TypeScript                                            |
+| `pnpm db:up`, `pnpm db:migrate`, `pnpm seed` | Local database                                                                     |
+| `pnpm demo`                                  | Local database with the demo profile, the pose model and `pnpm dev` (docs/demo.md) |
+| `pnpm create-org`                            | Create an organisation and its first admin invite                                  |
+| `pnpm invite-admin`                          | Invite an admin to an existing organisation (runbook: a coach is locked out)       |
+| `pnpm revoke-link`                           | Take a share link down from the link alone (runbook: a link must be revoked)       |
+| `pnpm licences`                              | Licence allowlist check                                                            |
+| `pnpm openapi`                               | Regenerate `apps/api/openapi.json`                                                 |
+| `pnpm fetch-models`                          | Download the pinned pose models, runner detector and WASM runtime                  |

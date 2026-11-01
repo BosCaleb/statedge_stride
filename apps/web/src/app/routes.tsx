@@ -1,9 +1,10 @@
 import type { RouteObject } from 'react-router';
 import { RouteError } from './ErrorBoundary';
+import { StatEdgeLoader } from '../components/StatEdgeLoader';
 
 /** Shown while the first chunks load. */
 function BootFallback() {
-  return <div className="boot" aria-busy="true" />;
+  return <StatEdgeLoader variant="screen" />;
 }
 
 // The route table. Every screen is lazy-loaded, the shell and the auth guard included, so the
@@ -21,6 +22,7 @@ const devRoutes: RouteObject[] = DEV_PAGES
       },
       {
         lazy: async () => ({ Component: (await import('./AppShell')).AppShell }),
+        handle: { appShell: true },
         children: [
           {
             path: '/dev/gallery',
@@ -34,6 +36,15 @@ const devRoutes: RouteObject[] = DEV_PAGES
   : [];
 
 export const routes: RouteObject[] = [
+  // The shared report sits outside AppRoot: no sign-in, outbox or offline data code.
+  {
+    path: '/r/:token',
+    lazy: async () => ({
+      Component: (await import('../features/public/PublicReportPage')).PublicReportPage,
+    }),
+    ErrorBoundary: RouteError,
+    HydrateFallback: BootFallback,
+  },
   {
     lazy: async () => ({ Component: (await import('./AppRoot')).AppRoot }),
     ErrorBoundary: RouteError,
@@ -55,6 +66,7 @@ export const routes: RouteObject[] = [
       },
       {
         lazy: async () => ({ Component: (await import('./AppShell')).AppShell }),
+        handle: { appShell: true },
         children: [
           {
             path: '/guide',
@@ -141,6 +153,12 @@ export const routes: RouteObject[] = [
                 path: '/compare',
                 lazy: async () => ({
                   Component: (await import('../features/compare/ComparePage')).ComparePage,
+                }),
+              },
+              {
+                path: '/reports/:id',
+                lazy: async () => ({
+                  Component: (await import('../features/reports/ReportPage')).ReportPage,
                 }),
               },
               {

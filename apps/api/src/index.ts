@@ -1,6 +1,7 @@
 import { app } from '@azure/functions';
 import './functions/routes';
 import { preflight } from './functions/preflight';
+import { retentionSweep } from './functions/retentionSweep';
 import { registeredRoutes } from './lib/http';
 
 // Entry point for the Azure Functions host (package.json "main"). Every route of the shared
@@ -21,4 +22,12 @@ app.http('preflight', {
   route: '{*path}',
   authLevel: 'anonymous',
   handler: preflight,
+});
+
+// Daily at 00:00 UTC (02:00 in South Africa). The host's NCRONTAB has a seconds field, so the
+// specification's "0 0 * * *" is written with a leading 0.
+app.timer('retention-sweep', {
+  schedule: '0 0 0 * * *',
+  runOnStartup: false,
+  handler: retentionSweep,
 });

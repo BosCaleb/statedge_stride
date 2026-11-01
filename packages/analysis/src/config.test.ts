@@ -1,4 +1,4 @@
-import { analysisConfigSchema } from '@stride/shared/analysisConfig';
+import { analysisConfigSchema, configSnapshotSchema } from '@stride/shared/analysisConfig';
 import { METRIC_IDS } from '@stride/shared/enums';
 import { describe, expect, it } from 'vitest';
 import { ALGORITHM_VERSION, defaultAnalysisConfig, defaultConfig } from './config';
@@ -10,6 +10,8 @@ import { ALGORITHM_VERSION, defaultAnalysisConfig, defaultConfig } from './confi
 const CONFIG_FINGERPRINTS: Record<string, string> = {
   '0.1.0': '61057c21',
   '0.1.1': '9b924b80',
+  '0.1.2': 'ac52965d',
+  '0.1.3': '0255f2f2',
 };
 
 /** FNV-1a 32-bit hash of the canonical JSON. */
@@ -24,6 +26,20 @@ function fingerprint(value: unknown): string {
 }
 
 describe('analysis configuration', () => {
+  it('still reads the configuration stored in results made by earlier versions', () => {
+    // As stored by version 0.1.0: none of the values added since.
+    const old = defaultAnalysisConfig() as Partial<ReturnType<typeof defaultAnalysisConfig>>;
+    delete old.comparison;
+    delete old.runnerDetection;
+    delete old.poseModel;
+    const events = { ...defaultConfig.events } as Partial<typeof defaultConfig.events>;
+    delete events.minStepMs;
+    delete events.duplicateShareOfNeighbour;
+    const snapshot = { ...old, events };
+    expect(configSnapshotSchema.safeParse(snapshot).success).toBe(true);
+    expect(analysisConfigSchema.safeParse(snapshot).success).toBe(false);
+  });
+
   it('matches the shared schema', () => {
     expect(analysisConfigSchema.parse(defaultConfig)).toEqual(defaultConfig);
   });

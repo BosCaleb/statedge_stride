@@ -18,7 +18,7 @@ WebCodecs and OPFS need a secure context, so the phone must load the page over H
 tcp:5173`, start `pnpm --filter @stride/web dev`, and open `http://localhost:5173/dev/spike` in
   Chrome on the phone. Use `chrome://inspect` on the computer for the console.
 - **iPhone:** use the dev environment deployment (HTTPS), or Safari Web Inspector with a tunnel.
-- Run `pnpm fetch-models` first (add `--heavy` to try the heavy model).
+- Run `pnpm fetch-models` first (it fetches the heavy model too).
 
 Record with the native camera app in **Slow motion** (not Super slow-mo), 1080p, 240 fps, on a
 tripod, side-on, as in the capture guide. Import the **original** file (not a shared or edited

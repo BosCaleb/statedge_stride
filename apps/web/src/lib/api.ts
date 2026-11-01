@@ -61,6 +61,13 @@ export interface ApiClientOptions {
   /** A bearer token, or null when the coach must sign in again. */
   getToken: () => Promise<string | null>;
   fetch?: typeof fetch;
+  /** Told about every call that failed (an error status or no answer), by route name only. */
+  onFailure?: (failure: {
+    route: RouteName;
+    method: string;
+    status: number;
+    durationMs: number;
+  }) => void;
 }
 
 export type ApiCall = <N extends RouteName>(name: N, input: CallInput<N>) => Promise<CallResult<N>>;
@@ -101,6 +108,14 @@ export function createApiClient(options: ApiClientOptions): ApiCall {
       }
     }
     const url = `${options.baseUrl}${path}${search.size > 0 ? `?${search.toString()}` : ''}`;
+    const started = performance.now();
+    const failed = (status: number) =>
+      options.onFailure?.({
+        route: name,
+        method: def.method,
+        status,
+        durationMs: Math.round(performance.now() - started),
+      });
     let response: Response;
     try {
       response = await doFetch(url, {
@@ -113,9 +128,13 @@ export function createApiClient(options: ApiClientOptions): ApiCall {
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') throw error;
+      failed(0);
       throw new NetworkError(error);
     }
-    if (!response.ok) throw await problemFrom(response);
+    if (!response.ok) {
+      failed(response.status);
+      throw await problemFrom(response);
+    }
     const reply = def.response;
     if (reply === null || response.status === 204)
       return { status: response.status, data: null as ResponseOf<Def<N>> };

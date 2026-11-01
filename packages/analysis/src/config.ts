@@ -4,7 +4,7 @@ import type { AnalysisConfig } from '@stride/shared/analysisConfig';
  * Bump whenever any algorithm or any value in `defaultConfig` changes. A test fingerprints the
  * configuration and fails until the version is bumped and the new fingerprint is recorded.
  */
-export const ALGORITHM_VERSION = '0.1.1';
+export const ALGORITHM_VERSION = '0.1.3';
 
 /**
  * Every threshold, cut-off, distance and weight used by the analysis, in one place.
@@ -87,6 +87,15 @@ export const defaultConfig: AnalysisConfig = deepFreeze({
     minStanceMs: 50,
     /** Stance runs longer than this are discarded. STARTING VALUE. */
     maxStanceMs: 400,
+    /**
+     * Two initial contacts closer than this, and closer than `duplicateShareOfNeighbour` of the
+     * longer gap next to theirs, are one landing seen twice (often as both feet, when the far leg
+     * is hidden or the athlete is small): the better-supported one is kept. The fastest human
+     * steps take about 200 ms. Both conditions, so that a clip whose every gap is short (a wrong
+     * frame rate) keeps its steps and fails the timing check. NOT IN SPEC.
+     */
+    minStepMs: 150,
+    duplicateShareOfNeighbour: 0.5,
     /** Stance runs separated by fewer than this many frames are merged. STARTING VALUE (two frames). */
     mergeGapFrames: 2,
     /** Primary and secondary initial contacts agree when within this time. STARTING VALUE. */
@@ -213,6 +222,47 @@ export const defaultConfig: AnalysisConfig = deepFreeze({
      */
     sameScaleShare: 0.02,
     sameFrameRateShare: 0.1,
+  },
+
+  /**
+   * Finding the runner (the athlete box suggestion on the analyse screen): MediaPipe's object
+   * detector looks for people in sampled frames; the box proposed is the largest person fully in
+   * the frame who is not standing still. The coach confirms it or draws another. NOT IN SPEC.
+   */
+  runnerDetection: {
+    /** Frames sampled across the clip (the first and last 5 percent are skipped). */
+    samples: 12,
+    /** Detections of a person below this score are ignored. */
+    minScore: 0.35,
+    /** People shorter than this share of the frame height are ignored (too small to analyse). */
+    minHeightShare: 0.08,
+    /** A box this close to the frame edge, as a share of the frame side, is not fully in view. */
+    edgeMarginShare: 0.01,
+    /**
+     * A box that overlaps (intersection over union at least `staticIou`) a box in at least
+     * `staticShare` of the other sampled frames is someone standing still, not the runner.
+     */
+    staticIou: 0.5,
+    staticShare: 0.5,
+    /** The proposed box is the detection enlarged by this share on each side. */
+    padShare: 0.15,
+    /**
+     * The analysis starts at the box's frame, so of the frames where the runner is at least this
+     * share of their largest height, the earliest is proposed: the rest of the run is kept.
+     */
+    nearLargestShare: 0.8,
+  },
+
+  /**
+   * The heavy pose model gives better landmarks for small or distant athletes but costs about
+   * three times as much as the full model. The device check times it on the coach's own clip:
+   * at or under `heavyMaxMsPerFrame` (which keeps a 5 s, 240 fps clip under the spec's 90 s), the
+   * phone uses it. NOT IN SPEC (the spec makes heavy selectable). STARTING VALUE.
+   */
+  poseModel: {
+    heavyMaxMsPerFrame: 55,
+    /** Frames of the clip timed by the device check. */
+    benchmarkFrames: 20,
   },
 });
 

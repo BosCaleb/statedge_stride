@@ -1,4 +1,8 @@
 # Local development only. SQL Server 2022 runs the same migrations as Azure SQL.
+#
+#   pnpm db:up                                  the database alone, for `pnpm dev` on this computer
+#   docker compose --profile demo up --build    the database and the whole app in containers,
+#                                               with the demo profile (docs/demo.md)
 # The SA password below is for this throwaway local container and is never used anywhere else.
 services:
   sql:
@@ -18,3 +22,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 30
+
+  # The web app and API with fake sign-in, the demo data loaded on every start (unless
+  # STRIDE_KEEP_DATA=true). Open http://localhost:${STRIDE_WEB_PORT}, 8080 by default. The ports
+  # can be changed in a .env file next to this one; the API and share links follow them.
+  app:
+    profiles: ['demo']
+    build:
+      context: .
+      dockerfile: docker/demo.Dockerfile
+    depends_on:
+      sql:
+        condition: service_healthy
+    environment:
+      SQL_SERVER: sql
+      STRIDE_LOCAL_SA_PASSWORD: ${STRIDE_LOCAL_SA_PASSWORD:-Stride-local-dev-1}
+      STRIDE_KEEP_DATA: ${STRIDE_KEEP_DATA:-false}
+      VITE_API_BASE_URL: http://localhost:${STRIDE_API_PORT:-8081}/api
+      ALLOWED_ORIGINS: http://localhost:${STRIDE_WEB_PORT:-8080}
+      STRIDE_WEB_ORIGIN: http://localhost:${STRIDE_WEB_PORT:-8080}
+    ports:
+      - '${STRIDE_WEB_PORT:-8080}:5173'
+      - '${STRIDE_API_PORT:-8081}:7071'

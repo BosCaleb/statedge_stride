@@ -9,10 +9,12 @@
   "dependencies": {
     "@stride/analysis": "workspace:*",
     "@stride/shared": "workspace:*",
+    "cross-spawn": "^7.0.6",
     "mssql": "^12.7.13",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
     "@types/mssql": "^12.3.0"
   }
 }
