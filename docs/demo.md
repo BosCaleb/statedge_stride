@@ -1,32 +1,24 @@
 # Trying Stride on your computer
 
-A step-by-step guide to running StatEdge Stride locally with a demo profile, so that you can click through every screen. Everything runs on your computer: a local database in Docker, the API and the web app. Sign-in is a "Sign in as" button instead of Entra, and nothing is sent anywhere else.
+A step-by-step guide to running StatEdge Stride locally with a demo profile, so that you can click through every screen. Everything runs on your computer, in Docker: a local database, the API and the web app. Sign-in is a "Sign in as" button instead of Entra, and nothing is sent anywhere else.
 
 ## What you get
 
-| Who or what         | Details                                                                                                                                                                                       |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Coach to sign in as | **coach@school-a.test** (Sipho Coach, Seeded School A). **admin@school-a.test** (Thandi Admin) also sees Settings.                                                                            |
-| **Amahle Demo**     | Pre-filled: three saved runs (6, 3 and 1 weeks ago), notes, a report, and an open share link. Shows the history, the trend, the before-and-after view, reports and sharing without any setup. |
-| **Pieter Demo**     | Empty, with consent recorded. Use him to go through the app from the start: session, import, calibration, analysis, save, report.                                                             |
-| Other seeded people | Lerato Seedling (a minor, guardian consent), Johan Testrun, Naledi Noconsent (no consent: try saving for her), and a second organisation, Seeded Club B, to show that it cannot see School A. |
-| Test videos         | `fixtures/clips/synthetic-calibration-240fps.mp4` and `fixtures/clips/synthetic-run-240fps.mp4`: a drawn stick figure on a track, filmed at 240 fps. No real person.                          |
+| Who or what         | Details                                                                                                                                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Coach to sign in as | **coach@school-a.test** (Sipho Coach, Seeded School A). **admin@school-a.test** (Thandi Admin) also sees Settings.                                                                                                                          |
+| **Amahle Demo**     | Pre-filled: three saved runs (6, 3 and 1 weeks ago), notes, a report, and an open share link. Shows the history, the trend, the before-and-after view, reports and sharing without any setup.                                               |
+| **Pieter Demo**     | Empty, with consent recorded. Use him to go through the app from the start: session, import, calibration and analysis. With the synthetic test video the analysis stops at the quality checks; a real clip gets through to save and report. |
+| Other seeded people | Lerato Seedling (a minor, guardian consent), Johan Testrun, Naledi Noconsent (no consent: try saving for her), and a second organisation, Seeded Club B, to show that it cannot see School A.                                               |
+| Test videos         | `fixtures/clips/synthetic-calibration-240fps.mp4` and `fixtures/clips/synthetic-run-240fps.mp4`: a drawn stick figure on a track, filmed at 240 fps. No real person.                                                                        |
 
 Amahle's latest run is the test video's own result. Her two earlier runs are copies of it with a few measurements moved (cadence, ground contact, foot landing, trunk lean, bounce), so that the trend and the comparison have changes to show. Her results were made on "another phone", so the video is not on yours: the result screen asks you to pick it, and recognises the run test video.
 
-## One-time setup
+## Start it in Docker (recommended)
 
-You need about 10 GB of free disk space.
+Everything runs in containers: the database, the API and the web app, with the pose model inside the image. All you need on your computer is **Docker Desktop** (from docker.com; on Windows, let it turn on WSL 2 when it asks) and **Git**, and about 10 GB of free disk space.
 
-1. **Docker Desktop.** Install it from docker.com and start it. On Windows, let it turn on WSL 2 when it asks.
-2. **Node.js 22.** Install the "22 LTS" version from nodejs.org.
-3. **pnpm.** In a terminal (PowerShell on Windows, Terminal on a Mac):
-
-   ```bash
-   corepack enable
-   ```
-
-4. **Get the code** and install it, in the folder you want it in:
+1. Get the code, in the folder you want it in:
 
    ```bash
    git clone https://github.com/BosCaleb/statedge_stride.git
@@ -37,26 +29,63 @@ You need about 10 GB of free disk space.
    ```
 
    ```bash
-   git checkout claude/demo-profile
+   git checkout dev
    ```
+
+2. With Docker Desktop running, build and start it:
 
    ```bash
-   pnpm install
+   docker compose --profile demo up --build
    ```
 
-## Start it
+   The first build downloads Node, the packages and the pose model and takes a few minutes; later starts take seconds. When the log shows the demo summary and `Local: http://localhost:5173/`, open **http://localhost:8080** (the container's 5173 is published on your computer's 8080).
 
-With Docker Desktop running:
+3. The summary also prints **the share link of Amahle's report**, starting `http://localhost:8080/r/`. It is shown only then (the server stores only a fingerprint of it), so copy it now.
+
+To stop, press Ctrl+C, then remove the containers:
+
+```bash
+docker compose --profile demo down
+```
+
+**Every start resets the demo data**, so you always begin from the same state. To keep what you change between starts, create a file called `.env` next to `docker-compose.yml` with this line:
+
+```
+STRIDE_KEEP_DATA=true
+```
+
+**Other ports.** The app uses port 8080 and its API port 8081 on your computer. If either is taken, add other ports to `.env` (the API and the share links follow them), then start again:
+
+```
+STRIDE_WEB_PORT=8090
+STRIDE_API_PORT=8091
+```
+
+**To pick up new changes** later:
+
+```bash
+git pull origin dev
+```
+
+```bash
+docker compose --profile demo up --build
+```
+
+`--build` rebuilds the app image with the new code; the database container is kept and updated by the migrations.
+
+## Or run it without the app container
+
+If Node.js 22 and pnpm are installed on your computer (`corepack enable` sets up pnpm), the app can also run directly on it, with only the database in Docker:
+
+```bash
+pnpm install
+```
 
 ```bash
 pnpm demo
 ```
 
-This starts the database, sets it up, loads the seeded people and the demo profile, downloads the pose model (about 10 MB, the first time only) and starts the app. The first run takes a few minutes. When it prints the demo summary and `Local: http://localhost:5173/`, open **http://localhost:5173** in Chrome or Edge.
-
-The summary also prints **the share link of Amahle's report**. It is shown only then (the server stores only a fingerprint of it), so copy it now.
-
-To stop, press Ctrl+C in the terminal. `pnpm demo` again resets everything to the demo state, including anything you changed. To keep your changes between runs, start it with `pnpm dev` instead (Docker Desktop must be running).
+This uses ports 5173 (web), 7071 (API) and 1433 (database), and prints a share link on `http://localhost:5173`. Ctrl+C stops it; `pnpm dev` starts it again without resetting the data.
 
 ## Things to try
 
@@ -75,7 +104,8 @@ To stop, press Ctrl+C in the terminal. `pnpm demo` again resets everything to th
 2. **Import both test videos** together. Mark `synthetic-calibration-240fps.mp4` as "The calibration clip"; the run is matched to Pieter. Say they were filmed at 240 fps if asked.
 3. **Calibrate.** Tap the two orange cones and enter **5 m** between them.
 4. **Analyse.** Open Pieter's run, move to a frame where the whole runner is in view, draw a box around him, and press "Analyse this run". It takes from under a minute to a few minutes, depending on your computer.
-5. **Save**, add a note, make a report, share it, revoke it.
+5. **Expect the quality checks to fail on this video.** The real pose model does not reliably see the drawn stick figure as a person, so the analysis ends with "This clip did not pass the quality checks", each reason measured, and a tip to fix the shoot. That is the screen a coach sees after a poor shoot, and nothing can be saved from it.
+6. **For a result you can save, use a real slow-motion clip** of someone who agrees to it: film yourself or a colleague side-on, the whole body in view, at 240 fps if the phone can (120 fps works for distance mode), with two cones a known distance apart in a short calibration clip first. Import it for Pieter as above, then **save**, add a note, make a report, share it and revoke it. Keep such clips out of the repository.
 
 ### Other things worth a look
 
@@ -94,7 +124,12 @@ To stop, press Ctrl+C in the terminal. `pnpm demo` again resets everything to th
 
 ## If something goes wrong
 
-- **"Cannot connect to the Docker daemon"** or the database does not start: start Docker Desktop and wait until it says it is running, then `pnpm demo` again.
-- **Port in use** (5173, 7071 or 1433): close the other program using it, or stop an earlier `pnpm demo` with Ctrl+C.
-- **The model download fails:** check the internet connection and run `pnpm fetch-models` on its own.
-- **A blank page or old data:** in Chrome, open the page's developer tools → Application → Clear site data, then reload.
+- **"Cannot connect to the Docker daemon"** or nothing starts: start Docker Desktop and wait until it says it is running, then start again.
+- **"Port is already allocated"** or **"port is already in use"**: another program, or Windows itself, holds that port. Choose other ports in `.env` (see above). For the database's port 1433, stop the other SQL Server, or the earlier containers with `docker compose --profile demo down`.
+- **The build fails while downloading:** check the internet connection and run the same command again; Docker resumes where it stopped.
+- **A blank page or old screens:** the app keeps a copy of itself in the browser. Reload, or open the page's developer tools → Application → Clear site data, then reload.
+- **Start completely afresh**, database included (this deletes everything in it):
+
+  ```bash
+  docker compose --profile demo down -v
+  ```

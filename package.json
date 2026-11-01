@@ -20,6 +20,7 @@
     "seed": "tsx scripts/seed.ts",
     "demo:seed": "tsx scripts/demo-seed.ts",
     "demo": "pnpm db:up && pnpm db:migrate && pnpm seed && pnpm demo:seed && pnpm fetch-models && pnpm dev",
+    "demo:container": "pnpm db:migrate && if [ \"$STRIDE_KEEP_DATA\" != true ]; then pnpm seed && pnpm demo:seed; fi && pnpm dev",
     "create-org": "tsx scripts/create-org.ts",
     "fetch-models": "tsx scripts/fetch-models.ts",
     "licences": "tsx scripts/check-licences.ts",

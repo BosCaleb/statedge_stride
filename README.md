@@ -33,7 +33,7 @@ pnpm dev
 
 Then open http://localhost:5173 and sign in as one of the seeded people.
 
-To click through the app with demo athletes, results, a report and a share link, run `pnpm demo` instead: see `docs/demo.md`.
+To click through the app with demo athletes, results, a report and a share link, run `pnpm demo` instead, or with only Docker installed, `docker compose --profile demo up --build`: see `docs/demo.md`.
 
 ## Commands
 

@@ -3,6 +3,8 @@
 // esbuild watch and Azurite; otherwise it serves the same handlers with a small Node server
 // (apps/api/src/dev/localServer.ts), which runs everything except timer functions.
 // SQL Server comes from `pnpm db:up`, then `pnpm db:migrate` and `pnpm seed`.
+// In the demo container (docker-compose.yml, profile "demo"), STRIDE_DEV_HOST=0.0.0.0 makes the web
+// server listen beyond the container; the API's settings come from the container's environment.
 
 import type { ChildProcess } from 'node:child_process';
 import { copyFileSync, existsSync } from 'node:fs';
@@ -74,4 +76,10 @@ if (hasFunc) {
   );
   run('api', 'pnpm', ['exec', 'tsx', 'watch', 'src/dev/localServer.ts'], api);
 }
-run('web', 'pnpm', ['exec', 'vite', '--port', '5173', '--strictPort'], `${root}apps/web`);
+const host = process.env.STRIDE_DEV_HOST;
+run(
+  'web',
+  'pnpm',
+  ['exec', 'vite', '--port', '5173', '--strictPort', ...(host ? ['--host', host] : [])],
+  `${root}apps/web`,
+);

@@ -41,7 +41,8 @@ const settings = scriptDbSettings();
 if (!settings.local) throw new Error('pnpm demo:seed runs against the local database only');
 
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
-const WEB_ORIGIN = 'http://localhost:5173';
+/** Where the web app is opened: the demo container sets it to the port it publishes. */
+const WEB_ORIGIN = process.env.STRIDE_WEB_ORIGIN ?? 'http://localhost:5173';
 const ORG = DEV_ORGS.a;
 const COACH = DEV_IDENTITIES.find((p) => p.coach?.org === 'a' && p.coach.role === 'coach');
 if (!COACH?.coach) throw new Error('no seeded coach in Seeded School A');
@@ -432,8 +433,9 @@ Demo profile ready in ${ORG.name}. Sign in as ${COACH.email} (${COACH.name}).
   ${AMAHLE.first} ${AMAHLE.last}: three saved runs (${RUNS.map((r) => day(r.daysAgo)).join(', ')}), notes, a report and a share link
   ${PIETER.first} ${PIETER.last}: consent recorded, nothing else yet
 Test videos (synthetic, no real person):
-  ${here('../fixtures/clips/synthetic-calibration-240fps.mp4')}  calibration, cones 5 m apart
-  ${here('../fixtures/clips/synthetic-run-240fps.mp4')}  run, filmed at 240 fps
+  fixtures/clips/synthetic-calibration-240fps.mp4  calibration, cones 5 m apart
+  fixtures/clips/synthetic-run-240fps.mp4  run, filmed at 240 fps
+  (in the repository folder on your computer)
 Share link of Amahle's report (shown only now; open it in a private window):
   ${shareUrl}
 `);
