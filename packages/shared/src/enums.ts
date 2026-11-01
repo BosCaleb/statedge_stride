@@ -72,6 +72,7 @@ export const RESULT_CHECK_IDS = [
   'events_found',
   'events_alternate',
   'method_agreement',
+  'steps_reliable',
   'timebase_plausible',
   'side_labels',
 ] as const;

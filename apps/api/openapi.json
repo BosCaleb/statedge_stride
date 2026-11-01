@@ -482,7 +482,7 @@
                       },
                       {
                         "type": "string",
-                        "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|timebase_plausible|side_labels)$"
+                        "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|steps_reliable|timebase_plausible|side_labels)$"
                       }
                     ]
                   }
@@ -554,6 +554,7 @@
                         "events_found",
                         "events_alternate",
                         "method_agreement",
+                        "steps_reliable",
                         "timebase_plausible",
                         "side_labels"
                       ]
@@ -795,6 +796,12 @@
                   "minStanceMs": {
                     "type": "number"
                   },
+                  "minStepMs": {
+                    "type": "number"
+                  },
+                  "duplicateShareOfNeighbour": {
+                    "type": "number"
+                  },
                   "maxStanceMs": {
                     "type": "number"
                   },
@@ -837,6 +844,8 @@
                   "stanceSpeedLegPerSec",
                   "groundBandLeg",
                   "minStanceMs",
+                  "minStepMs",
+                  "duplicateShareOfNeighbour",
                   "maxStanceMs",
                   "mergeGapFrames",
                   "icToleranceMs",
@@ -1812,7 +1821,7 @@
                       },
                       {
                         "type": "string",
-                        "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|timebase_plausible|side_labels)$"
+                        "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|steps_reliable|timebase_plausible|side_labels)$"
                       }
                     ]
                   }
@@ -1882,6 +1891,7 @@
                         "events_found",
                         "events_alternate",
                         "method_agreement",
+                        "steps_reliable",
                         "timebase_plausible",
                         "side_labels"
                       ]
@@ -2113,6 +2123,12 @@
                   "minStanceMs": {
                     "type": "number"
                   },
+                  "minStepMs": {
+                    "type": "number"
+                  },
+                  "duplicateShareOfNeighbour": {
+                    "type": "number"
+                  },
                   "maxStanceMs": {
                     "type": "number"
                   },
@@ -2155,6 +2171,8 @@
                   "stanceSpeedLegPerSec",
                   "groundBandLeg",
                   "minStanceMs",
+                  "minStepMs",
+                  "duplicateShareOfNeighbour",
                   "maxStanceMs",
                   "mergeGapFrames",
                   "icToleranceMs",
@@ -3698,7 +3716,7 @@
                             },
                             {
                               "type": "string",
-                              "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|timebase_plausible|side_labels)$"
+                              "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|steps_reliable|timebase_plausible|side_labels)$"
                             }
                           ]
                         }
@@ -3814,7 +3832,7 @@
                             },
                             {
                               "type": "string",
-                              "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|timebase_plausible|side_labels)$"
+                              "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|steps_reliable|timebase_plausible|side_labels)$"
                             }
                           ]
                         }
@@ -4133,7 +4151,7 @@
                             },
                             {
                               "type": "string",
-                              "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|timebase_plausible|side_labels)$"
+                              "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|steps_reliable|timebase_plausible|side_labels)$"
                             }
                           ]
                         }
@@ -4247,7 +4265,7 @@
                             },
                             {
                               "type": "string",
-                              "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|timebase_plausible|side_labels)$"
+                              "pattern": "^gate:(codec_decodable|fps_ok|timing_regular|resolution_ok|duration_ok|calibration_present|athlete_selected|camera_stable|person_tracked|body_visible|athlete_size|feet_visible|steady_direction|events_found|events_alternate|method_agreement|steps_reliable|timebase_plausible|side_labels)$"
                             }
                           ]
                         }

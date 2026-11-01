@@ -844,6 +844,10 @@ export const en = {
         message: 'The two ways of finding foot contacts often disagreed.',
         tip: 'Film side-on and keep the whole foot in view.',
       },
+      steps_reliable: {
+        message: 'The steps could not be found reliably, so the timing cannot be checked.',
+        tip: 'Film closer, so that the athlete fills about a third of the frame height, side-on at hip height with the whole foot in view.',
+      },
       timebase_plausible: {
         message: 'The timing looks wrong.',
         tip: 'Check that you used Slow motion and not Super slow-mo, and that you imported the original file.',

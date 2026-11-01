@@ -4,7 +4,7 @@ import type { AnalysisConfig } from '@stride/shared/analysisConfig';
  * Bump whenever any algorithm or any value in `defaultConfig` changes. A test fingerprints the
  * configuration and fails until the version is bumped and the new fingerprint is recorded.
  */
-export const ALGORITHM_VERSION = '0.1.1';
+export const ALGORITHM_VERSION = '0.1.2';
 
 /**
  * Every threshold, cut-off, distance and weight used by the analysis, in one place.
@@ -87,6 +87,15 @@ export const defaultConfig: AnalysisConfig = deepFreeze({
     minStanceMs: 50,
     /** Stance runs longer than this are discarded. STARTING VALUE. */
     maxStanceMs: 400,
+    /**
+     * Two initial contacts closer than this, and closer than `duplicateShareOfNeighbour` of the
+     * longer gap next to theirs, are one landing seen twice (often as both feet, when the far leg
+     * is hidden or the athlete is small): the better-supported one is kept. The fastest human
+     * steps take about 200 ms. Both conditions, so that a clip whose every gap is short (a wrong
+     * frame rate) keeps its steps and fails the timing check. NOT IN SPEC.
+     */
+    minStepMs: 150,
+    duplicateShareOfNeighbour: 0.5,
     /** Stance runs separated by fewer than this many frames are merged. STARTING VALUE (two frames). */
     mergeGapFrames: 2,
     /** Primary and secondary initial contacts agree when within this time. STARTING VALUE. */

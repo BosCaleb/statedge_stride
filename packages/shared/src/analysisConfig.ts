@@ -72,6 +72,8 @@ export const analysisConfigSchema = z.object({
     stanceSpeedLegPerSec: z.number(),
     groundBandLeg: z.number(),
     minStanceMs: z.number(),
+    minStepMs: z.number(),
+    duplicateShareOfNeighbour: z.number(),
     maxStanceMs: z.number(),
     mergeGapFrames: z.number().int(),
     icToleranceMs: z.number(),

@@ -135,6 +135,54 @@ export interface EventDetection {
   secondary: Record<Side, { icCandidates: number[]; toCandidates: number[] }>;
   /** Consecutive events (by initial contact) on the same side. */
   alternationBreaks: number;
+  /** Initial contacts dropped as the same landing seen twice (`events.minStepMs`). */
+  duplicatesDropped: number;
+}
+
+const AGREEMENT_RANK: Record<StanceEvent['agreement'], number> = {
+  both: 0,
+  'primary-only': 1,
+  'secondary-only': 2,
+};
+
+/**
+ * Drops initial contacts that follow the previous one by less than `minStepSec`, where that gap
+ * is also shorter than `shareOfNeighbour` of the longer gap next to it: no runner steps that
+ * fast, and the gaps around it show it is out of place, so it is one landing seen twice, often
+ * once as each foot. A clip whose every gap is short (a wrong frame rate) keeps its contacts, so
+ * that the timing check sees it. Of the two, the event both methods agree on is kept; when they
+ * are alike, the one that keeps left and right alternating with the contact before; otherwise
+ * the earlier. `events` must be sorted by initial contact.
+ */
+export function dropDuplicateContacts(
+  events: readonly StanceEvent[],
+  minStepSec: number,
+  shareOfNeighbour: number,
+): { events: StanceEvent[]; dropped: number } {
+  const gaps = events.slice(1).map((e, i) => e.icTimeSec - (events[i]?.icTimeSec ?? e.icTimeSec));
+  /** Whether the gap before events[i] joins one landing seen twice. */
+  const duplicate = (i: number) => {
+    const gap = gaps[i - 1];
+    if (gap === undefined || gap >= minStepSec) return false;
+    const neighbour = Math.max(gaps[i - 2] ?? 0, gaps[i] ?? 0);
+    return gap < shareOfNeighbour * neighbour;
+  };
+  const kept: StanceEvent[] = [];
+  let dropped = 0;
+  for (const [i, event] of events.entries()) {
+    const last = kept[kept.length - 1];
+    if (!last || !duplicate(i)) {
+      kept.push(event);
+      continue;
+    }
+    dropped++;
+    const before = kept[kept.length - 2];
+    const rank = AGREEMENT_RANK[event.agreement] - AGREEMENT_RANK[last.agreement];
+    const alternates =
+      before !== undefined && before.side !== event.side && before.side === last.side;
+    if (rank < 0 || (rank === 0 && alternates)) kept[kept.length - 1] = event;
+  }
+  return { events: kept, dropped };
 }
 
 function sampleTime(track: Track, k: number): number {
@@ -392,9 +440,18 @@ export function detectEvents(
   }
 
   events.sort((a, b) => a.icTimeSec - b.icTimeSec);
+  const distinct = dropDuplicateContacts(events, e.minStepMs / 1000, e.duplicateShareOfNeighbour);
   let alternationBreaks = 0;
-  for (let i = 1; i < events.length; i++) {
-    if (events[i]?.side === events[i - 1]?.side) alternationBreaks++;
+  for (let i = 1; i < distinct.events.length; i++) {
+    if (distinct.events[i]?.side === distinct.events[i - 1]?.side) alternationBreaks++;
   }
-  return { events, ground, traces, primaryRuns, secondary, alternationBreaks };
+  return {
+    events: distinct.events,
+    ground,
+    traces,
+    primaryRuns,
+    secondary,
+    alternationBreaks,
+    duplicatesDropped: distinct.dropped,
+  };
 }
