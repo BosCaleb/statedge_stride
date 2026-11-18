@@ -10,9 +10,9 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@azure/functions": "^4.17.0",
-    "jose": "^6.2.13",
-    "mssql": "^12.7.13",
+    "@azure/functions": "^4.17.1",
+    "jose": "^6.2.17",
+    "mssql": "^12.7.14",
     "zod": "^4.6.7"
   },
   "devDependencies": {
